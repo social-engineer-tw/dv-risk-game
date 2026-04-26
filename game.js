@@ -7,7 +7,11 @@ const MAX_DELTA = 0.033;
 const SPAWN_OFFSET = 56;
 const DROP_WIDTH_DESKTOP = 138;
 const DROP_WIDTH_MOBILE = 112;
-const EARLY_GAME_SPEED_DURATION = 10;
+const DROP_HEIGHT_DESKTOP = 58;
+const DROP_HEIGHT_MOBILE = 52;
+const CATCHER_HEIGHT_DESKTOP = 78;
+const CATCHER_HEIGHT_MOBILE = 70;
+const CATCHER_BOTTOM_OFFSET = 18;
 const EARLY_GAME_SPEED_MULTIPLIER = 0.85;
 const NORMAL_SPEED_START = 10;
 const LATE_GAME_SPEED_START = 25;
@@ -190,6 +194,7 @@ let lastFrameTime = null;
 let gameStartTime = null;
 let nextSpawnAt = null;
 let catchLineY = 0;
+let catcherBottomY = 0;
 let messageTimerId = null;
 let supportSlowTimerId = null;
 let effectTimerId = null;
@@ -209,7 +214,8 @@ let bestSupportStreak = 0;
 let lateSpeedPromptShown = false;
 let finalSpeedPromptShown = false;
 let bgMusic = null;
-let musicEnabled = false;
+let musicEnabled = true;
+let musicUnlocked = false;
 let soundEnabled = true;
 let caughtCounts = {
   pressure: 0,
@@ -376,7 +382,9 @@ function getElapsedSeconds() {
 
 function updateCatchLine() {
   const stageHeight = laneArea.clientHeight || laneArea.offsetHeight || 360;
-  catchLineY = Math.max(180, stageHeight - 88);
+  const catcherHeight = getCatcherHeight();
+  catchLineY = Math.max(140, stageHeight - CATCHER_BOTTOM_OFFSET - catcherHeight);
+  catcherBottomY = Math.min(stageHeight, catchLineY + catcherHeight);
 }
 
 function getMaxActiveItems() {
@@ -449,6 +457,14 @@ function pickSpawnLane() {
 
 function getDropWidth() {
   return window.matchMedia("(max-width: 640px)").matches ? DROP_WIDTH_MOBILE : DROP_WIDTH_DESKTOP;
+}
+
+function getDropHeight() {
+  return window.matchMedia("(max-width: 640px)").matches ? DROP_HEIGHT_MOBILE : DROP_HEIGHT_DESKTOP;
+}
+
+function getCatcherHeight() {
+  return window.matchMedia("(max-width: 640px)").matches ? CATCHER_HEIGHT_MOBILE : CATCHER_HEIGHT_DESKTOP;
 }
 
 function getLaneX(lane) {
@@ -546,10 +562,12 @@ function getCurrentFallSpeed() {
 
   if (elapsedSeconds < NORMAL_SPEED_START) {
     timeMultiplier = EARLY_GAME_SPEED_MULTIPLIER;
-  } else if (elapsedSeconds >= FINAL_SPEED_START) {
-    timeMultiplier = FINAL_SPEED_MULTIPLIER;
-  } else if (elapsedSeconds >= LATE_GAME_SPEED_START) {
+  } else if (elapsedSeconds < LATE_GAME_SPEED_START) {
+    timeMultiplier = 1;
+  } else if (elapsedSeconds < FINAL_SPEED_START) {
     timeMultiplier = LATE_GAME_SPEED_MULTIPLIER;
+  } else {
+    timeMultiplier = FINAL_SPEED_MULTIPLIER;
   }
 
   let riskMultiplier = 1;
@@ -629,9 +647,13 @@ function removeDrop(drop, wasCaught) {
 
   if (wasCaught) {
     drop.element.classList.add("is-caught");
-    drop.element.style.transform = `translate3d(${drop.x}px, ${drop.y}px, 0) scale(0.88)`;
+    const mouthY = Math.min(catchLineY + getCatcherHeight() * 0.28, catcherBottomY - getDropHeight() * 0.42);
+    playerBasket.classList.add("is-catching");
+    drop.element.style.transition = "transform 150ms ease-in, opacity 150ms ease-in";
+    drop.element.style.transform = `translate3d(${drop.x}px, ${mouthY}px, 0) scale(0.28)`;
     setTimeout(() => {
       drop.element.remove();
+      playerBasket.classList.remove("is-catching");
     }, 180);
     return;
   }
@@ -687,17 +709,19 @@ function updateDrops(timestamp) {
     drop.y += getCurrentFallSpeed() * secondsPassed;
     drop.element.style.transform = `translate3d(${drop.x}px, ${drop.y}px, 0)`;
 
-    if (drop.y >= catchLineY) {
-      if (drop.lane === currentLane) {
-        applyItemEffect(drop.item);
-        removeDrop(drop, true);
-      } else {
-        if (drop.item.type === "danger") {
-          avoidDanger();
-        }
+    const dropBottom = drop.y + getDropHeight();
+    const overlapsCatcher = dropBottom >= catchLineY && drop.y <= catcherBottomY;
+    const hasPassedCatcher = drop.y > catcherBottomY;
 
-        removeDrop(drop, false);
+    if (drop.lane === currentLane && overlapsCatcher) {
+      applyItemEffect(drop.item);
+      removeDrop(drop, true);
+    } else if (hasPassedCatcher) {
+      if (drop.item.type === "danger") {
+        avoidDanger();
       }
+
+      removeDrop(drop, false);
     }
   });
 
@@ -798,11 +822,13 @@ function getBgMusic() {
     bgMusic.volume = 0.15;
     bgMusic.preload = "none";
     bgMusic.addEventListener("error", () => {
+      musicUnlocked = false;
       musicEnabled = false;
       updateSoundButtons();
     });
   } catch (error) {
     bgMusic = null;
+    musicUnlocked = false;
     musicEnabled = false;
     updateSoundButtons();
   }
@@ -822,27 +848,83 @@ function updateSoundButtons() {
   }
 }
 
+function tryPlayMusic() {
+  if (!musicEnabled) {
+    return;
+  }
+
+  const music = getBgMusic();
+
+  if (!music) {
+    musicEnabled = false;
+    musicUnlocked = false;
+    updateSoundButtons();
+    return;
+  }
+
+  music.volume = 0.15;
+  const playPromise = music.play();
+
+  if (playPromise && typeof playPromise.then === "function") {
+    playPromise
+      .then(() => {
+        musicUnlocked = true;
+        updateSoundButtons();
+      })
+      .catch(() => {
+        musicUnlocked = false;
+        updateSoundButtons();
+      });
+  } else {
+    musicUnlocked = !music.paused;
+    updateSoundButtons();
+  }
+}
+
+function unlockMusicByUserGesture() {
+  const music = getBgMusic();
+
+  if (musicEnabled && music && music.paused) {
+    tryPlayMusic();
+  }
+}
+
 function toggleMusic() {
   musicEnabled = !musicEnabled;
   const music = getBgMusic();
 
   if (!music) {
     musicEnabled = false;
+    musicUnlocked = false;
     updateSoundButtons();
     return;
   }
 
   if (musicEnabled) {
-    music.volume = 0.15;
-    music.play().catch(() => {
-      musicEnabled = false;
-      updateSoundButtons();
-    });
+    updateSoundButtons();
+    tryPlayMusic();
   } else {
     music.pause();
+    musicUnlocked = false;
+    updateSoundButtons();
   }
+}
 
-  updateSoundButtons();
+function registerMusicUnlockGestures() {
+  const handleFirstPointer = (event) => {
+    if (event.target instanceof Element && event.target.closest("#music-toggle")) {
+      return;
+    }
+
+    unlockMusicByUserGesture();
+  };
+
+  const handleFirstKey = () => {
+    unlockMusicByUserGesture();
+  };
+
+  document.addEventListener("pointerdown", handleFirstPointer, { once: true, capture: true });
+  document.addEventListener("keydown", handleFirstKey, { once: true, capture: true });
 }
 
 function toggleSound() {
@@ -973,6 +1055,7 @@ function resetGameVisuals() {
 }
 
 function startGame() {
+  unlockMusicByUserGesture();
   isPlaying = false;
   stopTimer();
   stopDropping();
@@ -1054,3 +1137,5 @@ updateTimerDisplay();
 resetRoundState();
 moveBasket(currentLane);
 updateSoundButtons();
+registerMusicUnlockGestures();
+tryPlayMusic();
