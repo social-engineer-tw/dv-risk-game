@@ -61,7 +61,6 @@ const lessonList = document.querySelector("#lesson-list");
 const finalRisk = document.querySelector("#final-risk");
 const roundSummary = document.querySelector("#round-summary");
 const challengeTip = document.querySelector("#challenge-tip");
-const closingLine = document.querySelector("#closing-line");
 const laneButtons = document.querySelectorAll(".lane-button");
 const laneElements = document.querySelectorAll(".lane");
 
@@ -765,25 +764,32 @@ function getBgMusic() {
     return bgMusic;
   }
 
-  bgMusic = new Audio(BG_MUSIC_PATH);
-  bgMusic.loop = true;
-  bgMusic.volume = 0.36;
-  bgMusic.addEventListener("error", () => {
+  try {
+    bgMusic = new Audio(BG_MUSIC_PATH);
+    bgMusic.loop = true;
+    bgMusic.volume = 0.15;
+    bgMusic.preload = "none";
+    bgMusic.addEventListener("error", () => {
+      musicEnabled = false;
+      updateSoundButtons();
+    });
+  } catch (error) {
+    bgMusic = null;
     musicEnabled = false;
     updateSoundButtons();
-  });
+  }
 
   return bgMusic;
 }
 
 function updateSoundButtons() {
   if (musicToggle) {
-    musicToggle.textContent = musicEnabled ? "音樂 開" : "音樂 關";
+    musicToggle.textContent = musicEnabled ? "音樂：開" : "音樂：關";
     musicToggle.setAttribute("aria-pressed", String(musicEnabled));
   }
 
   if (soundToggle) {
-    soundToggle.textContent = soundEnabled ? "音效 開" : "音效 關";
+    soundToggle.textContent = soundEnabled ? "音效：開" : "音效：關";
     soundToggle.setAttribute("aria-pressed", String(soundEnabled));
   }
 }
@@ -792,7 +798,14 @@ function toggleMusic() {
   musicEnabled = !musicEnabled;
   const music = getBgMusic();
 
+  if (!music) {
+    musicEnabled = false;
+    updateSoundButtons();
+    return;
+  }
+
   if (musicEnabled) {
+    music.volume = 0.15;
     music.play().catch(() => {
       musicEnabled = false;
       updateSoundButtons();
@@ -857,7 +870,6 @@ function renderResult(resultType) {
       badge: "任務完成",
       title: "風險降到安全區",
       description: "你接住了足夠的支持，讓風險降回安全區。",
-      closing: "支持越早進來，傷害越有機會被停下來。",
       tip: "下一次挑戰更快降到 0。",
       button: "再挑戰一次",
     },
@@ -865,7 +877,6 @@ function renderResult(resultType) {
       badge: "安全警示",
       title: "安全危機發生",
       description: "風險超過 100。危險選擇讓危機快速升高，需要更早被停下來。",
-      closing: "壓力不是家暴的理由，危險選擇需要更早被停下來。",
       tip: "下一次先避開紅色危險。",
       button: "再挑戰一次",
     },
@@ -873,7 +884,6 @@ function renderResult(resultType) {
       badge: "任務達成",
       title: "成功守住",
       description: "你把風險維持在安全線附近，讓危機沒有擴大。",
-      closing: "理解原因，不是原諒暴力；看見風險，是為了更早停止傷害。",
       tip: "下一次試著讓風險歸零。",
       button: "再挑戰一次",
     },
@@ -881,7 +891,6 @@ function renderResult(resultType) {
       badge: "任務回顧",
       title: "再接再厲",
       description: "你撐過了 60 秒，但風險還能再往安全區推進。",
-      closing: "理解原因，不是原諒暴力；看見風險，是為了更早停止傷害。",
       tip: "下一次把風險降到 20 以下。",
       button: "再挑戰一次",
     },
@@ -889,7 +898,6 @@ function renderResult(resultType) {
       badge: "高風險",
       title: "高風險未解除",
       description: "你撐到最後，但風險仍然偏高。越接近危機，越需要避開危險、接住支持。",
-      closing: "理解原因，不是原諒暴力；看見風險，是為了更早停止傷害。",
       tip: "下一次多接綠色、少碰紅色。",
       button: "再挑戰一次",
     },
@@ -901,7 +909,6 @@ function renderResult(resultType) {
   resultDescription.textContent = content.description;
   resultDescription.hidden = false;
   lessonList.hidden = false;
-  closingLine.textContent = content.closing;
   restartButton.textContent = content.button;
   finalRisk.textContent = `最後風險：${risk} / ${RISK_MAX}`;
   roundSummary.innerHTML = getRoundSummaryText()

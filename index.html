@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>接住生活，好險有你</title>
+  <title>好險有你</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="sound-controls" aria-label="聲音設定">
-    <button id="music-toggle" class="sound-button" type="button" aria-pressed="false">音樂 關</button>
-    <button id="sound-toggle" class="sound-button" type="button" aria-pressed="true">音效 開</button>
+    <button id="music-toggle" class="sound-button" type="button" aria-pressed="false">音樂：關</button>
+    <button id="sound-toggle" class="sound-button" type="button" aria-pressed="true">音效：開</button>
   </div>
 
   <main class="app-shell">
@@ -17,9 +17,9 @@
       <div class="mission-panel home-layout">
         <div class="mission-copy">
           <p class="eyebrow">家暴防治宣導小遊戲</p>
-          <h1 id="home-title">接住生活，好險有你</h1>
+          <h1 id="home-title">好險有你</h1>
           <p class="subtitle">60 秒挑戰：把家暴風險降到 20 以下，別讓它超過 100。</p>
-          <p class="action-note">接住綠色支持，閃避橘色壓力和紅色危險，把風險拉回安全區。</p>
+          <p class="action-note">準備好了嗎？接住綠色支持、閃避橘色壓力和紅色危險，把風險拉回安全區。</p>
 
           <div class="tool-card-row" aria-label="任務道具">
             <article class="tool-card tool-support">
@@ -39,7 +39,6 @@
             </article>
           </div>
 
-          <p class="bottom-line">壓力不是家暴的理由；看見風險，是為了更早停止傷害。</p>
           <button id="start-button" class="primary-button mission-start" type="button">開始挑戰</button>
         </div>
 
@@ -62,12 +61,12 @@
       </div>
     </section>
 
-    <section id="game-screen" class="screen" aria-labelledby="game-title" aria-hidden="true">
+    <section id="game-screen" class="screen" aria-label="任務進行中" aria-hidden="true">
       <div class="game-wrap mission-game">
         <header class="game-header mission-hud">
           <div class="hud-title">
             <p class="eyebrow">任務進行中</p>
-            <h2 id="game-title">接住生活，好險有你</h2>
+            <p class="hud-subtitle">60 秒挑戰</p>
           </div>
 
           <div class="risk-panel hud-risk" aria-label="目前風險值">
@@ -83,7 +82,6 @@
               <span>80 高風險</span>
               <span>100 危機</span>
             </div>
-            <p class="risk-goal">目標：降到 20 以下；超過 100 就危機。</p>
             <div class="legend-row" aria-label="掉落物圖例">
               <span>🟢 接住支持</span>
               <span>🟠 閃避壓力</span>
@@ -160,8 +158,6 @@
             <p>支持可以降風險</p>
           </article>
         </div>
-
-        <p id="closing-line" class="closing-line">理解原因，不是原諒暴力；看見風險，是為了更早停止傷害。</p>
 
         <div class="result-actions">
           <button id="restart-button" class="primary-button" type="button">再挑戰一次</button>
