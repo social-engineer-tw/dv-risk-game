@@ -2194,11 +2194,13 @@ h1 {
 
 .drop-card {
   display: flex;
-  width: 116px;
-  max-width: 116px;
+  width: 138px;
+  max-width: 138px;
   min-height: 58px;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
   opacity: 0;
   visibility: visible;
   animation: none;
@@ -2211,6 +2213,18 @@ h1 {
   filter: none;
   pointer-events: none;
   z-index: 5;
+  white-space: nowrap;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.drop-card span:last-child {
+  white-space: nowrap;
+}
+
+.drop-icon {
+  flex: 0 0 auto;
+  font-size: 1.08em;
 }
 
 .drop-card.is-visible {
@@ -2226,8 +2240,11 @@ h1 {
 
 @media (max-width: 640px) {
   .drop-card {
-    width: 98px;
-    max-width: 98px;
+    width: 112px;
+    max-width: 112px;
     min-height: 52px;
+    gap: 6px;
+    padding: 9px 10px;
+    font-size: 0.96rem;
   }
 }
