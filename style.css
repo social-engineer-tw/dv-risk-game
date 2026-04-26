@@ -1106,19 +1106,6 @@ body {
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.92);
   box-shadow: 0 12px 24px rgba(32, 55, 47, 0.16);
-  animation: itemEnter 180ms ease-out;
-}
-
-@keyframes itemEnter {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.96);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 .drop-card.pressure {
@@ -1758,8 +1745,7 @@ h1 {
   border: 1px solid rgba(159, 187, 176, 0.7);
 }
 
-.preview-item,
-.preview-basket {
+.preview-item {
   position: absolute;
   display: grid;
   place-items: center;
@@ -1776,13 +1762,13 @@ h1 {
 }
 
 .preview-support {
-  top: 12%;
+  top: 16%;
   left: 4%;
   background: var(--mission-green);
 }
 
 .preview-pressure {
-  top: 28%;
+  top: 42%;
   left: calc(50% - 46px);
   background: var(--mission-amber);
   color: #3f2b12;
@@ -1790,22 +1776,10 @@ h1 {
 }
 
 .preview-danger {
-  top: 10%;
+  top: 24%;
   right: 4%;
   background: var(--mission-red);
   animation-delay: 0.7s;
-}
-
-.preview-basket {
-  bottom: 18px;
-  left: calc(50% - 42px);
-  width: 84px;
-  height: 58px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent),
-    var(--mission-green-dark);
-  border: 3px solid rgba(255, 255, 255, 0.9);
-  font-size: 2rem;
 }
 
 @keyframes floatItem {
@@ -1958,7 +1932,7 @@ h1 {
 }
 
 .player-basket {
-  z-index: 3;
+  z-index: 10;
   width: 104px;
   min-height: 68px;
   padding: 7px 10px 9px;
@@ -1989,6 +1963,11 @@ h1 {
     linear-gradient(180deg, #367f9d, #2d6f91);
   border: 1px solid rgba(255, 255, 255, 0.42);
   box-shadow: 0 14px 28px rgba(45, 111, 145, 0.22);
+}
+
+.control-row {
+  position: relative;
+  z-index: 20;
 }
 
 .lane-button.is-active {
@@ -2201,5 +2180,54 @@ h1 {
 
   .lesson-list {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Drop smoothness patch: JS owns transform; CSS only fades opacity. */
+.drop-card,
+.drop-card.lane-left,
+.drop-card.lane-middle,
+.drop-card.lane-right {
+  top: 0;
+  left: 0;
+}
+
+.drop-card {
+  display: flex;
+  width: 116px;
+  max-width: 116px;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: visible;
+  animation: none;
+  transition: opacity 120ms ease;
+  will-change: transform;
+  backface-visibility: hidden;
+  contain: layout paint style;
+  transform: translate3d(0, 0, 0);
+  box-shadow: 0 8px 18px rgba(20, 51, 45, 0.14);
+  filter: none;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.drop-card.is-visible {
+  opacity: 1;
+}
+
+.drop-card.is-caught {
+  opacity: 0;
+  transition: opacity 120ms ease;
+  filter: none;
+  z-index: 6;
+}
+
+@media (max-width: 640px) {
+  .drop-card {
+    width: 98px;
+    max-width: 98px;
+    min-height: 52px;
   }
 }

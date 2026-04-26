@@ -3,6 +3,10 @@ const RISK_START = 50;
 const RISK_MIN = 0;
 const RISK_MAX = 100;
 const BASE_FALL_SPEED = 96;
+const MAX_DELTA = 0.033;
+const SPAWN_OFFSET = 56;
+const DROP_WIDTH_DESKTOP = 116;
+const DROP_WIDTH_MOBILE = 98;
 const EARLY_GAME_SPEED_DURATION = 10;
 const EARLY_GAME_SPEED_MULTIPLIER = 0.85;
 const NORMAL_SPEED_START = 10;
@@ -371,7 +375,8 @@ function getElapsedSeconds() {
 }
 
 function updateCatchLine() {
-  catchLineY = laneArea.clientHeight - 88;
+  const stageHeight = laneArea.clientHeight || laneArea.offsetHeight || 360;
+  catchLineY = Math.max(180, stageHeight - 88);
 }
 
 function getMaxActiveItems() {
@@ -442,6 +447,18 @@ function pickSpawnLane() {
   return lane;
 }
 
+function getDropWidth() {
+  return window.matchMedia("(max-width: 640px)").matches ? DROP_WIDTH_MOBILE : DROP_WIDTH_DESKTOP;
+}
+
+function getLaneX(lane) {
+  const laneIndex = lanes.indexOf(lane);
+  const stageWidth = laneArea.clientWidth || 360;
+  const laneWidth = stageWidth / lanes.length;
+
+  return laneWidth * laneIndex + laneWidth / 2 - getDropWidth() / 2;
+}
+
 function pickDropItem() {
   const elapsedSeconds = getElapsedSeconds();
   let type = pickWeightedType();
@@ -483,18 +500,27 @@ function createDrop() {
 
   const item = pickDropItem();
   const lane = pickSpawnLane();
+  const x = getLaneX(lane);
+  const y = -SPAWN_OFFSET;
   const element = document.createElement("div");
 
   element.className = `drop-card ${item.type} lane-${lane}`;
   element.innerHTML = `<span class="drop-icon" aria-hidden="true">${item.icon}</span><span>${item.text}</span>`;
   element.setAttribute("aria-label", `${item.text}，${laneNames[lane]}軌`);
+  element.style.opacity = "0";
+  element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   laneArea.appendChild(element);
+  requestAnimationFrame(() => {
+    element.style.opacity = "";
+    element.classList.add("is-visible");
+  });
 
   activeItems.push({
     item,
     lane,
     element,
-    y: -64,
+    x,
+    y,
   });
 }
 
@@ -515,28 +541,30 @@ function maybeCreateDrop(timestamp) {
 }
 
 function getCurrentFallSpeed() {
-  let speed = BASE_FALL_SPEED;
   const elapsedSeconds = getElapsedSeconds();
+  let timeMultiplier = 1;
 
   if (elapsedSeconds < NORMAL_SPEED_START) {
-    speed *= EARLY_GAME_SPEED_MULTIPLIER;
+    timeMultiplier = EARLY_GAME_SPEED_MULTIPLIER;
   } else if (elapsedSeconds >= FINAL_SPEED_START) {
-    speed *= FINAL_SPEED_MULTIPLIER;
+    timeMultiplier = FINAL_SPEED_MULTIPLIER;
   } else if (elapsedSeconds >= LATE_GAME_SPEED_START) {
-    speed *= LATE_GAME_SPEED_MULTIPLIER;
+    timeMultiplier = LATE_GAME_SPEED_MULTIPLIER;
   }
 
+  let riskMultiplier = 1;
   if (risk >= 90) {
-    speed *= CRITICAL_RISK_SPEED_MULTIPLIER;
+    riskMultiplier = CRITICAL_RISK_SPEED_MULTIPLIER;
   } else if (risk >= 70) {
-    speed *= HIGH_RISK_SPEED_MULTIPLIER;
+    riskMultiplier = HIGH_RISK_SPEED_MULTIPLIER;
   }
 
+  let supportSlowMultiplier = 1;
   if (supportSlowTimerId !== null) {
-    speed *= SUPPORT_SLOW_MULTIPLIER;
+    supportSlowMultiplier = SUPPORT_SLOW_MULTIPLIER;
   }
 
-  return speed;
+  return BASE_FALL_SPEED * timeMultiplier * riskMultiplier * supportSlowMultiplier;
 }
 
 function avoidDanger() {
@@ -601,7 +629,7 @@ function removeDrop(drop, wasCaught) {
 
   if (wasCaught) {
     drop.element.classList.add("is-caught");
-    drop.element.style.transform = `translate3d(0, ${drop.y}px, 0) scale(0.88)`;
+    drop.element.style.transform = `translate3d(${drop.x}px, ${drop.y}px, 0) scale(0.88)`;
     setTimeout(() => {
       drop.element.remove();
     }, 180);
@@ -624,7 +652,7 @@ function updateDrops(timestamp) {
     lastFrameTime = timestamp;
   }
 
-  const secondsPassed = Math.min((timestamp - lastFrameTime) / 1000, 0.05);
+  const secondsPassed = Math.min((timestamp - lastFrameTime) / 1000, MAX_DELTA);
   lastFrameTime = timestamp;
   const elapsedSeconds = Math.min(GAME_DURATION, (timestamp - gameStartTime) / 1000);
   const nextTimeLeft = Math.max(0, Math.ceil(GAME_DURATION - elapsedSeconds));
@@ -657,7 +685,7 @@ function updateDrops(timestamp) {
     }
 
     drop.y += getCurrentFallSpeed() * secondsPassed;
-    drop.element.style.transform = `translate3d(0, ${drop.y}px, 0)`;
+    drop.element.style.transform = `translate3d(${drop.x}px, ${drop.y}px, 0)`;
 
     if (drop.y >= catchLineY) {
       if (drop.lane === currentLane) {
