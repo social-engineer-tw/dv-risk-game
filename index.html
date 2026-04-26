@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>接住生活，好險有你</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section id="home-screen" class="screen screen-active" aria-labelledby="home-title">
+      <div class="content-wrap home-layout">
+        <div class="hero-copy">
+          <p class="eyebrow">家暴防治宣導小遊戲</p>
+          <h1 id="home-title">《接住生活，好險有你》</h1>
+          <p class="subtitle">60 秒挑戰：把風險降到 20 以下，別讓它衝到 100。</p>
+          <p class="action-note">準備好了嗎？把風險拉回安全區。</p>
+          <div class="rule-list" aria-label="玩法說明">
+            <p>綠色支持：少量降低風險</p>
+            <p>灰色壓力：少量增加風險</p>
+            <p>紅色危險：大量增加風險</p>
+          </div>
+          <p class="goal-note">目標：接住綠色支持，把風險推進安全區。</p>
+          <p class="bottom-line">壓力不是暴力的理由；看見風險，是為了更早停止傷害。</p>
+        </div>
+
+        <button id="start-button" class="primary-button" type="button">開始挑戰</button>
+      </div>
+    </section>
+
+    <section id="game-screen" class="screen" aria-labelledby="game-title" aria-hidden="true">
+      <div class="game-wrap">
+        <header class="game-header">
+          <div>
+            <p class="eyebrow">遊戲進行中</p>
+            <h2 id="game-title">接住生活，好險有你</h2>
+          </div>
+          <div class="timer-box" aria-live="polite">
+            <span class="timer-label">倒數時間</span>
+            <strong id="time-left">60</strong>
+          </div>
+        </header>
+
+        <div class="risk-panel" aria-label="目前風險值">
+          <div class="risk-topline">
+            <span>風險值</span>
+            <strong id="risk-value">50 / 100</strong>
+          </div>
+          <div class="risk-meter" aria-hidden="true">
+            <div id="risk-bar" class="risk-bar"></div>
+          </div>
+          <div class="risk-thresholds" aria-hidden="true">
+            <span>20 安全線</span>
+            <span>80 高風險</span>
+            <span>100 危機</span>
+          </div>
+          <p class="risk-goal">目標：降到 20 以下；衝到 100 就危機。</p>
+          <div class="legend-row" aria-label="掉落物圖例">
+            <span>🟢 接住支持</span>
+            <span>🟠 小心壓力</span>
+            <span>🔴 避開危險</span>
+          </div>
+          <p id="risk-message" class="risk-message">警戒中，接住支持。</p>
+        </div>
+
+        <div class="lane-area" aria-label="三條軌道的空白區域">
+          <div class="lane" aria-label="左軌道"></div>
+          <div class="lane" aria-label="中軌道"></div>
+          <div class="lane" aria-label="右軌道"></div>
+          <div id="countdown-display" class="countdown-display" aria-live="assertive"></div>
+          <div id="player-basket" class="player-basket lane-middle" aria-live="polite">
+            <span class="basket-icon" aria-hidden="true">🧺</span>
+          </div>
+        </div>
+
+        <div class="game-message-area" aria-live="polite">
+          <p id="item-message" class="item-message"></p>
+          <p class="fixed-reminder">壓力不是暴力的理由。</p>
+        </div>
+
+        <nav class="control-row" aria-label="移動控制">
+          <button class="lane-button" type="button" data-lane="left">左</button>
+          <button class="lane-button" type="button" data-lane="middle">中</button>
+          <button class="lane-button" type="button" data-lane="right">右</button>
+        </nav>
+      </div>
+    </section>
+
+    <section id="result-screen" class="screen" aria-labelledby="result-title" aria-hidden="true">
+      <div class="content-wrap result-layout">
+        <div>
+          <p class="eyebrow">結果與提醒</p>
+          <h2 id="result-title">成功守住</h2>
+          <p id="result-description" class="result-description"></p>
+        </div>
+
+        <div id="lesson-list" class="lesson-list">
+          <article class="lesson-card">
+            <span class="lesson-number">1</span>
+            <p>壓力會累積</p>
+          </article>
+          <article class="lesson-card">
+            <span class="lesson-number">2</span>
+            <p>危險選擇會傷人</p>
+          </article>
+          <article class="lesson-card">
+            <span class="lesson-number">3</span>
+            <p>支持可以降風險</p>
+          </article>
+        </div>
+
+        <p id="final-risk" class="final-risk">最後風險：50 / 100</p>
+        <section class="summary-card" aria-labelledby="summary-title">
+          <h3 id="summary-title">本局回顧</h3>
+          <div id="round-summary" class="summary-grid">
+            <span>壓力 0 次</span>
+            <span>危險 0 次</span>
+            <span>支持 0 次</span>
+            <span>避開危險 0 次</span>
+            <span>最高風險 50</span>
+            <span>最高支持連擊 0</span>
+          </div>
+        </section>
+        <p id="challenge-tip" class="challenge-tip">下一次試著讓風險歸零。</p>
+        <p id="closing-line" class="closing-line">理解原因，不是原諒暴力；看見風險，是為了更早停止傷害。</p>
+
+        <div class="result-actions">
+          <button id="restart-button" class="primary-button" type="button">再挑戰一次</button>
+          <button id="home-button" class="secondary-button" type="button">回首頁</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
