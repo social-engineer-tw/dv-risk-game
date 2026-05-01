@@ -3,6 +3,7 @@ const SAFE_START = 0;
 const SAFE_MIN = 0;
 const SAFE_MAX = 100;
 const BASE_FALL_SPEED = 96;
+const GLOBAL_SPEED_MULTIPLIER = 1.3;
 const MAX_DELTA = 0.033;
 const SPAWN_OFFSET = 56;
 const DROP_WIDTH_DESKTOP = 138;
@@ -15,8 +16,10 @@ const CATCHER_HEIGHT_DESKTOP = 78;
 const CATCHER_HEIGHT_MOBILE = 70;
 const CATCHER_BOTTOM_OFFSET = 18;
 const BASKET_SPEED = 620;
-const MIN_SAME_LANE_VERTICAL_GAP = 140;
-const MIN_GLOBAL_VERTICAL_GAP = 76;
+const MIN_DROP_VERTICAL_GAP = 76;
+const MIN_DROP_NEAR_VERTICAL_GAP = 140;
+const MIN_DROP_HORIZONTAL_GAP = 118;
+const SPAWN_SIDE_PADDING = 12;
 const MAX_SPAWN_ATTEMPTS = 6;
 const SPAWN_RETRY_DELAY = 150;
 const EARLY_GAME_SPEED_MULTIPLIER = 1;
@@ -31,13 +34,14 @@ const FINAL_SPEED_MULTIPLIER = 1.8;
 const SUPPORT_SLOW_MULTIPLIER = 0.78;
 const SUPPORT_SLOW_DURATION = 2000;
 const SUPPORT_COMBO_BONUS = 2;
+const DANGER_BASKET_SLOW_MULTIPLIER = 0.72;
+const DANGER_BASKET_SLOW_DURATION = 1400;
 const EFFECT_FLASH_DURATION = 700;
 const COUNTDOWN_STEP_DURATION = 800;
 const FIRST_SUPPORT_DEADLINE = 10;
 const FIRST_SUPPORT_FORCE_AFTER = 4;
 const EARLY_DANGER_LIMIT_SECONDS = 15;
 const EARLY_DANGER_STREAK_LIMIT = 2;
-const MAX_SAME_LANE_STREAK = 2;
 const DROP_PHASES = [
   {
     start: 0,
@@ -229,6 +233,7 @@ let catchLineY = 0;
 let catcherBottomY = 0;
 let messageTimerId = null;
 let supportSlowTimerId = null;
+let dangerBasketSlowTimerId = null;
 let effectTimerId = null;
 let countdownTimerId = null;
 let currentLane = "middle";
@@ -244,8 +249,6 @@ let activeItems = [];
 let isPlaying = false;
 let supportSpawnedInFirstTen = 0;
 let earlyDangerStreak = 0;
-let lastSpawnLane = null;
-let sameLaneStreak = 0;
 let avoidedDangerCount = 0;
 let supportStreak = 0;
 let bestSupportStreak = 0;
@@ -311,8 +314,6 @@ function resetRoundState() {
   finalSpeedPromptShown = false;
   supportSpawnedInFirstTen = 0;
   earlyDangerStreak = 0;
-  lastSpawnLane = null;
-  sameLaneStreak = 0;
   updateSafetyDisplay();
 }
 
@@ -384,6 +385,16 @@ function startSupportSlowdown() {
   }, SUPPORT_SLOW_DURATION);
 }
 
+function startDangerBasketSlowdown() {
+  if (dangerBasketSlowTimerId !== null) {
+    clearTimeout(dangerBasketSlowTimerId);
+  }
+
+  dangerBasketSlowTimerId = setTimeout(() => {
+    dangerBasketSlowTimerId = null;
+  }, DANGER_BASKET_SLOW_DURATION);
+}
+
 function moveBasket(lane) {
   if (!laneNames[lane]) {
     return;
@@ -427,7 +438,8 @@ function centerBasket() {
 }
 
 function updateBasketPosition(deltaTime) {
-  basketVelocity = basketInputDirection * BASKET_SPEED;
+  const dangerSlowMultiplier = dangerBasketSlowTimerId !== null ? DANGER_BASKET_SLOW_MULTIPLIER : 1;
+  basketVelocity = basketInputDirection * BASKET_SPEED * dangerSlowMultiplier;
 
   if (basketVelocity !== 0) {
     setBasketX(basketX + basketVelocity * deltaTime);
@@ -496,22 +508,8 @@ function pickRandom(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-function pickSpawnLane() {
-  let lane = pickRandom(lanes);
-
-  if (lane === lastSpawnLane && sameLaneStreak >= MAX_SAME_LANE_STREAK) {
-    const otherLanes = lanes.filter((item) => item !== lastSpawnLane);
-    lane = pickRandom(otherLanes);
-  }
-
-  if (lane === lastSpawnLane) {
-    sameLaneStreak += 1;
-  } else {
-    lastSpawnLane = lane;
-    sameLaneStreak = 1;
-  }
-
-  return lane;
+function getRandomBetween(min, max) {
+  return min + Math.random() * (max - min);
 }
 
 function getDropWidth() {
@@ -526,50 +524,44 @@ function getCatcherHeight() {
   return window.matchMedia("(max-width: 640px)").matches ? CATCHER_HEIGHT_MOBILE : CATCHER_HEIGHT_DESKTOP;
 }
 
-function canSpawnAt(lane, y) {
-  return activeItems.every((drop) => {
-    const distance = Math.abs(drop.y - y);
+function canSpawnAt(x, y) {
+  const dropWidth = getDropWidth();
 
-    if (drop.lane === lane) {
-      return distance >= MIN_SAME_LANE_VERTICAL_GAP;
+  return activeItems.every((drop) => {
+    const verticalDistance = Math.abs(drop.y - y);
+    const horizontalDistance = Math.abs(drop.x - x);
+
+    if (verticalDistance < MIN_DROP_VERTICAL_GAP) {
+      return false;
     }
 
-    return distance >= MIN_GLOBAL_VERTICAL_GAP;
+    if (horizontalDistance < dropWidth + MIN_DROP_HORIZONTAL_GAP) {
+      return verticalDistance >= MIN_DROP_NEAR_VERTICAL_GAP;
+    }
+
+    return true;
   });
 }
 
-function pickSpawnLaneWithSpacing() {
+function getRandomDropX() {
+  const stageWidth = laneArea.clientWidth || 360;
+  const dropWidth = getDropWidth();
+  const minX = SPAWN_SIDE_PADDING;
+  const maxX = Math.max(minX, stageWidth - dropWidth - SPAWN_SIDE_PADDING);
+
+  return getRandomBetween(minX, maxX);
+}
+
+function pickSpawnXWithSpacing() {
   for (let attempt = 0; attempt < MAX_SPAWN_ATTEMPTS; attempt += 1) {
-    const shuffledLanes = [...lanes].sort(() => Math.random() - 0.5);
-    const lane = shuffledLanes.find((candidateLane) => {
-      if (candidateLane === lastSpawnLane && sameLaneStreak >= MAX_SAME_LANE_STREAK) {
-        return false;
-      }
+    const x = getRandomDropX();
 
-      return canSpawnAt(candidateLane, -SPAWN_OFFSET);
-    });
-
-    if (lane) {
-      if (lane === lastSpawnLane) {
-        sameLaneStreak += 1;
-      } else {
-        lastSpawnLane = lane;
-        sameLaneStreak = 1;
-      }
-
-      return lane;
+    if (canSpawnAt(x, -SPAWN_OFFSET)) {
+      return x;
     }
   }
 
   return null;
-}
-
-function getLaneX(lane) {
-  const laneIndex = lanes.indexOf(lane);
-  const stageWidth = laneArea.clientWidth || 360;
-  const laneWidth = stageWidth / lanes.length;
-
-  return laneWidth * laneIndex + laneWidth / 2 - getDropWidth() / 2;
 }
 
 function pickDropItem() {
@@ -606,26 +598,32 @@ function pickDropItem() {
   return pickRandom(pool);
 }
 
-function createDrop() {
+function createDrop(forcedType = null, speedMultiplier = 1) {
   if (!isPlaying || activeItems.length >= getMaxActiveItems() || !gameScreen.classList.contains("screen-active")) {
-    return;
+    return false;
   }
 
-  const item = pickDropItem();
-  const lane = pickSpawnLaneWithSpacing();
+  let item = null;
 
-  if (!lane) {
+  if (forcedType) {
+    const pool = dropItems.filter((dropItem) => dropItem.type === forcedType);
+    item = pickRandom(pool);
+  } else {
+    item = pickDropItem();
+  }
+  const x = pickSpawnXWithSpacing();
+
+  if (x === null) {
     nextSpawnAt = performance.now() + SPAWN_RETRY_DELAY;
-    return;
+    return false;
   }
 
-  const x = getLaneX(lane);
   const y = -SPAWN_OFFSET;
   const element = document.createElement("div");
 
-  element.className = `drop-card ${item.type} lane-${lane}`;
+  element.className = `drop-card ${item.type}`;
   element.innerHTML = `<span class="drop-icon" aria-hidden="true">${item.icon}</span><span>${item.text}</span>`;
-  element.setAttribute("aria-label", `${item.text}，${laneNames[lane]}軌`);
+  element.setAttribute("aria-label", item.text);
   element.style.opacity = "0";
   element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   laneArea.appendChild(element);
@@ -636,11 +634,13 @@ function createDrop() {
 
   activeItems.push({
     item,
-    lane,
     element,
     x,
     y,
+    speedMultiplier,
   });
+
+  return true;
 }
 
 function maybeCreateDrop(timestamp) {
@@ -653,7 +653,10 @@ function maybeCreateDrop(timestamp) {
   }
 
   if (activeItems.length < getMaxActiveItems()) {
-    createDrop();
+    if (!createDrop()) {
+      nextSpawnAt = timestamp + SPAWN_RETRY_DELAY;
+      return;
+    }
   }
 
   nextSpawnAt = timestamp + getSpawnInterval();
@@ -667,7 +670,7 @@ function getCurrentFallSpeed() {
     supportSlowMultiplier = SUPPORT_SLOW_MULTIPLIER;
   }
 
-  return BASE_FALL_SPEED * timeMultiplier * supportSlowMultiplier;
+  return BASE_FALL_SPEED * timeMultiplier * GLOBAL_SPEED_MULTIPLIER * supportSlowMultiplier;
 }
 
 function avoidDanger() {
@@ -697,8 +700,9 @@ function applyItemEffect(item) {
 
   if (item.type === "danger") {
     showTemporaryEffect("danger-flash");
+    startDangerBasketSlowdown();
     playSfx("danger");
-    showItemMessage("危險會拉低安全。");
+    showItemMessage("危險拖慢安全。");
   } else if (item.type === "support") {
     showTemporaryEffect("support-flash");
     startSupportSlowdown();
@@ -790,7 +794,7 @@ function updateDrops(timestamp) {
       return;
     }
 
-    drop.y += getCurrentFallSpeed() * secondsPassed;
+    drop.y += getCurrentFallSpeed() * (drop.speedMultiplier || 1) * secondsPassed;
     drop.element.style.transform = `translate3d(${drop.x}px, ${drop.y}px, 0)`;
 
     const dropLeft = drop.x;
@@ -906,6 +910,13 @@ function clearSupportSlowdown() {
   if (supportSlowTimerId !== null) {
     clearTimeout(supportSlowTimerId);
     supportSlowTimerId = null;
+  }
+}
+
+function clearDangerBasketSlowdown() {
+  if (dangerBasketSlowTimerId !== null) {
+    clearTimeout(dangerBasketSlowTimerId);
+    dangerBasketSlowTimerId = null;
   }
 }
 
@@ -1047,6 +1058,7 @@ function getRoundSummaryText() {
     { icon: "🟢", label: "綠色支持", value: `${caughtCounts.support} 次` },
     { icon: "🟠", label: "橘色壓力", value: `${caughtCounts.pressure} 次` },
     { icon: "🔴", label: "紅色危險", value: `${caughtCounts.danger} 次` },
+    { icon: "🛡️", label: "避開危險", value: `${avoidedDangerCount} 次` },
     { icon: "📈", label: "最高安全值", value: highestSafeScore },
     { icon: "✨", label: "連續支持", value: `${bestSupportStreak} 次` },
     { icon: "🎯", label: "距離通關", value: `${distanceToGoal} 分` },
@@ -1137,6 +1149,7 @@ function endGame(resultType) {
   clearCountdown();
   clearItemMessage();
   clearSupportSlowdown();
+  clearDangerBasketSlowdown();
   clearEffectClasses();
   renderResult(resultType);
   showScreen(resultScreen);
@@ -1168,6 +1181,7 @@ function startGame() {
   clearDrops();
   clearCountdown();
   clearSupportSlowdown();
+  clearDangerBasketSlowdown();
   resetGameVisuals();
   resetRoundState();
   timeLeft = GAME_DURATION;
@@ -1186,6 +1200,7 @@ function returnHome() {
   clearDrops();
   clearCountdown();
   clearSupportSlowdown();
+  clearDangerBasketSlowdown();
   resetGameVisuals();
   resetRoundState();
   timeLeft = GAME_DURATION;
