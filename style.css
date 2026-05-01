@@ -391,6 +391,33 @@ h2 {
   background: #bd332b;
 }
 
+.risk-panel.safety-low .risk-topline strong {
+  color: #2d6f91;
+}
+
+.risk-panel.safety-low .risk-bar {
+  background: linear-gradient(90deg, #52a6a0, #68b9a8);
+}
+
+.risk-panel.safety-medium .risk-topline strong {
+  color: var(--green-dark);
+}
+
+.risk-panel.safety-medium .risk-bar {
+  background: linear-gradient(90deg, #2f9f78, #35b991);
+}
+
+.risk-panel.safety-high .risk-topline strong,
+.risk-panel.safety-complete .risk-topline strong {
+  color: var(--green-dark);
+}
+
+.risk-panel.safety-high .risk-bar,
+.risk-panel.safety-complete .risk-bar {
+  background: linear-gradient(90deg, #1d8d6a, #3fcf9b);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 0 18px rgba(47, 159, 120, 0.26);
+}
+
 @keyframes riskPulse {
   0%,
   100% {
@@ -415,6 +442,7 @@ h2 {
   border-radius: 8px;
   box-shadow: var(--shadow);
   overflow: hidden;
+  touch-action: none;
 }
 
 .lane {
@@ -436,7 +464,7 @@ h2 {
 .player-basket {
   position: absolute;
   bottom: 16px;
-  left: calc(50% - 52px);
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -452,9 +480,11 @@ h2 {
   font-size: 1rem;
   font-weight: 900;
   line-height: 1.2;
-  transform: translateX(0);
-  transition: left 240ms ease;
+  transform: translate3d(0, 0, 0);
+  transition: box-shadow 140ms ease;
   z-index: 2;
+  touch-action: none;
+  user-select: none;
 }
 
 .drop-card {
@@ -538,15 +568,15 @@ h2 {
 }
 
 .player-basket.lane-left {
-  left: calc(16.666% - 52px);
+  left: 0;
 }
 
 .player-basket.lane-middle {
-  left: calc(50% - 52px);
+  left: 0;
 }
 
 .player-basket.lane-right {
-  left: calc(83.333% - 52px);
+  left: 0;
 }
 
 .basket-icon {
@@ -588,6 +618,10 @@ h2 {
 
 .control-row {
   gap: 10px;
+}
+
+.control-row {
+  display: none;
 }
 
 .lane-button {
@@ -741,7 +775,7 @@ h2 {
   }
 
   .risk-thresholds span:first-child::before {
-    content: "安全線 ";
+    content: "累積 ";
   }
 
   .risk-thresholds span:first-child {
@@ -754,7 +788,7 @@ h2 {
   }
 
   .risk-thresholds span:first-child::after {
-    content: "20";
+    content: "50";
   }
 
   .risk-thresholds span:last-child {
@@ -762,7 +796,7 @@ h2 {
   }
 
   .risk-thresholds span:last-child::after {
-    content: "危機線 100";
+    content: "通關 100";
     font-size: 0.82rem;
   }
 
@@ -778,15 +812,15 @@ h2 {
   }
 
   .player-basket.lane-left {
-    left: calc(16.666% - 44px);
+    left: 0;
   }
 
   .player-basket.lane-middle {
-    left: calc(50% - 44px);
+    left: 0;
   }
 
   .player-basket.lane-right {
-    left: calc(83.333% - 44px);
+    left: 0;
   }
 
   .drop-card.lane-left {
@@ -832,12 +866,7 @@ body {
 }
 
 .sound-controls {
-  position: fixed;
-  top: 14px;
-  right: 14px;
-  z-index: 20;
-  display: flex;
-  gap: 8px;
+  display: none;
 }
 
 .sound-button {
@@ -1129,16 +1158,20 @@ body {
 }
 
 #result-screen.result-safe-zone .content-wrap,
-#result-screen.result-success .content-wrap {
+#result-screen.result-success .content-wrap,
+#result-screen.result-complete .content-wrap,
+#result-screen.result-near .content-wrap {
   border-top: 8px solid var(--green);
 }
 
-#result-screen.result-steady .content-wrap {
+#result-screen.result-steady .content-wrap,
+#result-screen.result-more-support .content-wrap {
   border-top: 8px solid var(--amber);
 }
 
 #result-screen.result-high-risk .content-wrap,
-#result-screen.result-crisis .content-wrap {
+#result-screen.result-crisis .content-wrap,
+#result-screen.result-low-safety .content-wrap {
   border-top: 8px solid var(--danger);
 }
 
@@ -1168,9 +1201,7 @@ body {
 
 @media (max-width: 760px) {
   .sound-controls {
-    position: static;
-    justify-content: flex-end;
-    padding: 10px 12px 0;
+    display: none;
   }
 
   .hero-main {
@@ -1902,15 +1933,15 @@ h1 {
 }
 
 .player-basket.lane-left {
-  left: calc(16.666% - 58px);
+  left: 0;
 }
 
 .player-basket.lane-middle {
-  left: calc(50% - 58px);
+  left: 0;
 }
 
 .player-basket.lane-right {
-  left: calc(83.333% - 58px);
+  left: 0;
 }
 
 .lane-button {
@@ -1964,13 +1995,20 @@ h1 {
 }
 
 #result-screen.result-crisis .result-badge,
-#result-screen.result-high-risk .result-badge {
+#result-screen.result-high-risk .result-badge,
+#result-screen.result-low-safety .result-badge {
   background: var(--mission-red);
 }
 
-#result-screen.result-steady .result-badge {
+#result-screen.result-steady .result-badge,
+#result-screen.result-more-support .result-badge {
   background: var(--mission-amber);
   color: #3d2b10;
+}
+
+#result-screen.result-complete .result-badge,
+#result-screen.result-near .result-badge {
+  background: var(--mission-green);
 }
 
 .result-hero h2 {
@@ -2032,16 +2070,20 @@ h1 {
 }
 
 #result-screen.result-safe-zone .mission-panel,
-#result-screen.result-success .mission-panel {
+#result-screen.result-success .mission-panel,
+#result-screen.result-complete .mission-panel,
+#result-screen.result-near .mission-panel {
   border-top: 8px solid var(--mission-green);
 }
 
-#result-screen.result-steady .mission-panel {
+#result-screen.result-steady .mission-panel,
+#result-screen.result-more-support .mission-panel {
   border-top: 8px solid var(--mission-amber);
 }
 
 #result-screen.result-high-risk .mission-panel,
-#result-screen.result-crisis .mission-panel {
+#result-screen.result-crisis .mission-panel,
+#result-screen.result-low-safety .mission-panel {
   border-top: 8px solid var(--mission-red);
 }
 
@@ -2117,15 +2159,15 @@ h1 {
   }
 
   .player-basket.lane-left {
-    left: calc(16.666% - 48px);
+    left: 0;
   }
 
   .player-basket.lane-middle {
-    left: calc(50% - 48px);
+    left: 0;
   }
 
   .player-basket.lane-right {
-    left: calc(83.333% - 48px);
+    left: 0;
   }
 
   .hud-title {

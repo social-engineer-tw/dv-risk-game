@@ -1,7 +1,7 @@
-const GAME_DURATION = 60;
-const RISK_START = 50;
-const RISK_MIN = 0;
-const RISK_MAX = 100;
+﻿const GAME_DURATION = 60;
+const SAFE_START = 0;
+const SAFE_MIN = 0;
+const SAFE_MAX = 100;
 const BASE_FALL_SPEED = 96;
 const MAX_DELTA = 0.033;
 const SPAWN_OFFSET = 56;
@@ -9,33 +9,65 @@ const DROP_WIDTH_DESKTOP = 138;
 const DROP_WIDTH_MOBILE = 112;
 const DROP_HEIGHT_DESKTOP = 58;
 const DROP_HEIGHT_MOBILE = 52;
+const BASKET_WIDTH_DESKTOP = 116;
+const BASKET_WIDTH_MOBILE = 96;
 const CATCHER_HEIGHT_DESKTOP = 78;
 const CATCHER_HEIGHT_MOBILE = 70;
 const CATCHER_BOTTOM_OFFSET = 18;
-const EARLY_GAME_SPEED_MULTIPLIER = 0.85;
+const BASKET_SPEED = 620;
+const MIN_SAME_LANE_VERTICAL_GAP = 140;
+const MIN_GLOBAL_VERTICAL_GAP = 76;
+const MAX_SPAWN_ATTEMPTS = 6;
+const SPAWN_RETRY_DELAY = 150;
+const EARLY_GAME_SPEED_MULTIPLIER = 1;
 const NORMAL_SPEED_START = 10;
 const LATE_GAME_SPEED_START = 25;
 const FINAL_SPEED_START = 45;
 const LATE_GAME_PROMPT_TIME_LEFT = 35;
-const LATE_GAME_SPEED_MULTIPLIER = 1.25;
+const LATE_GAME_SPEED_MULTIPLIER = 1.5;
 const FINAL_SPEED_TIME = 15;
-const FINAL_SPEED_MULTIPLIER = 1.5;
-const HIGH_RISK_SPEED_MULTIPLIER = 1.15;
-const CRITICAL_RISK_SPEED_MULTIPLIER = 1.25;
+const MID_GAME_SPEED_MULTIPLIER = 1.25;
+const FINAL_SPEED_MULTIPLIER = 1.8;
 const SUPPORT_SLOW_MULTIPLIER = 0.78;
 const SUPPORT_SLOW_DURATION = 2000;
-const SUPPORT_COMBO_BONUS = -3;
-const SPAWN_INTERVAL = 1300;
-const MAX_ACTIVE_ITEMS = 2;
-const EARLY_GAME_MAX_ACTIVE_ITEMS = 1;
+const SUPPORT_COMBO_BONUS = 2;
 const EFFECT_FLASH_DURATION = 700;
 const COUNTDOWN_STEP_DURATION = 800;
 const FIRST_SUPPORT_DEADLINE = 10;
-const FIRST_SUPPORT_FORCE_AFTER = 7;
+const FIRST_SUPPORT_FORCE_AFTER = 4;
 const EARLY_DANGER_LIMIT_SECONDS = 15;
 const EARLY_DANGER_STREAK_LIMIT = 2;
 const MAX_SAME_LANE_STREAK = 2;
-const HIGH_RISK_SUPPORT_BOOST = 12;
+const DROP_PHASES = [
+  {
+    start: 0,
+    maxActive: 2,
+    spawnInterval: [900, 1100],
+    speedMultiplier: EARLY_GAME_SPEED_MULTIPLIER,
+    ratios: { support: 50, pressure: 35, danger: 15 },
+  },
+  {
+    start: NORMAL_SPEED_START,
+    maxActive: 3,
+    spawnInterval: [650, 850],
+    speedMultiplier: MID_GAME_SPEED_MULTIPLIER,
+    ratios: { support: 45, pressure: 35, danger: 20 },
+  },
+  {
+    start: LATE_GAME_SPEED_START,
+    maxActive: 4,
+    spawnInterval: [450, 650],
+    speedMultiplier: LATE_GAME_SPEED_MULTIPLIER,
+    ratios: { support: 40, pressure: 35, danger: 25 },
+  },
+  {
+    start: FINAL_SPEED_START,
+    maxActive: 5,
+    spawnInterval: [300, 500],
+    speedMultiplier: FINAL_SPEED_MULTIPLIER,
+    ratios: { support: 40, pressure: 30, danger: 30 },
+  },
+];
 const BG_MUSIC_PATH = "assets/audio/bg-loop.mp3";
 const SFX_PATHS = {
   support: "assets/audio/sfx-support.mp3",
@@ -85,105 +117,105 @@ const dropItems = [
     icon: "💸",
     text: "錢不夠",
     type: "pressure",
-    riskChange: 4,
+    safetyChange: -5,
     message: "壓力正在累積。",
   },
   {
     icon: "💼",
     text: "工作煩",
     type: "pressure",
-    riskChange: 4,
+    safetyChange: -5,
     message: "工作壓力讓人更緊繃。",
   },
   {
     icon: "🌙",
     text: "睡不好",
     type: "pressure",
-    riskChange: 5,
+    safetyChange: -5,
     message: "睡不好，判斷更容易變差。",
   },
   {
     icon: "😣",
     text: "被罵了",
     type: "pressure",
-    riskChange: 5,
-    message: "挫折感讓風險慢慢升高。",
+    safetyChange: -5,
+    message: "挫折感會干擾安全。",
   },
   {
     icon: "👶",
     text: "孩子哭",
     type: "pressure",
-    riskChange: 4,
+    safetyChange: -5,
     message: "親職壓力正在增加。",
   },
   {
     icon: "🗯️",
     text: "罵回去",
     type: "danger",
-    riskChange: 12,
-    message: "言語暴力會讓風險升高。",
+    safetyChange: -15,
+    message: "言語暴力會拉低安全。",
   },
   {
     icon: "📱",
     text: "查手機",
     type: "danger",
-    riskChange: 14,
-    message: "控制不是關心，風險上升。",
+    safetyChange: -15,
+    message: "控制不是關心，安全下降。",
   },
   {
     icon: "💥",
     text: "砸東西",
     type: "danger",
-    riskChange: 18,
+    safetyChange: -15,
     message: "砸東西會讓家人害怕。",
   },
   {
     icon: "⚠️",
     text: "威脅人",
     type: "danger",
-    riskChange: 22,
-    message: "威脅會讓風險快速升高。",
+    safetyChange: -15,
+    message: "威脅會讓安全快速下降。",
   },
   {
     icon: "⛔",
     text: "拿刀械",
     type: "danger",
-    riskChange: 30,
+    safetyChange: -15,
     message: "武器會讓危險急速升高。",
   },
   {
     icon: "⏸️",
     text: "暫停",
     type: "support",
-    riskChange: -12,
-    message: "先停下來，風險下降。",
+    safetyChange: 10,
+    message: "先停下來，安全上升。",
   },
   {
     icon: "☎️",
     text: "求助",
     type: "support",
-    riskChange: -14,
-    message: "求助可以讓風險下降。",
+    safetyChange: 10,
+    message: "求助可以增加安全。",
   },
   {
     icon: "🤝",
     text: "找社工",
     type: "support",
-    riskChange: -12,
-    message: "有人協助，風險有機會下降。",
+    safetyChange: 10,
+    message: "有人協助，安全有機會回來。",
   },
   {
     icon: "💬",
     text: "找人談",
     type: "support",
-    riskChange: -10,
+    safetyChange: 10,
     message: "說出來，比硬撐安全。",
   },
   {
     icon: "📘",
     text: "學溝通",
     type: "support",
-    riskChange: -10,
+    safetyChange: 10,
     message: "學習溝通，可以減少衝突。",
   },
 ];
@@ -200,11 +232,17 @@ let supportSlowTimerId = null;
 let effectTimerId = null;
 let countdownTimerId = null;
 let currentLane = "middle";
-let risk = RISK_START;
-let highestRisk = RISK_START;
+let basketX = 0;
+let basketVelocity = 0;
+let basketInputDirection = 0;
+let basketPointerId = null;
+let basketDragOffsetX = 0;
+let basketY = 0;
+let safeScore = SAFE_START;
+let highestSafeScore = SAFE_START;
 let activeItems = [];
 let isPlaying = false;
-let supportSpawnedInFirstTen = false;
+let supportSpawnedInFirstTen = 0;
 let earlyDangerStreak = 0;
 let lastSpawnLane = null;
 let sameLaneStreak = 0;
@@ -231,39 +269,36 @@ function showScreen(screen) {
   });
 }
 
-function clampRisk(value) {
-  return Math.min(RISK_MAX, Math.max(RISK_MIN, value));
+function clampSafeScore(value) {
+  return Math.min(SAFE_MAX, Math.max(SAFE_MIN, value));
 }
 
 function updateTimerDisplay() {
   timeLeftDisplay.textContent = String(timeLeft);
 }
 
-function updateRiskDisplay() {
-  riskValue.textContent = `${risk} / ${RISK_MAX}`;
-  riskBar.style.width = `${risk}%`;
+function updateSafetyDisplay() {
+  riskValue.textContent = `${safeScore} / ${SAFE_MAX}`;
+  riskBar.style.width = `${safeScore}%`;
 
-  riskPanel.classList.toggle("risk-safe", risk <= 20);
-  riskPanel.classList.toggle("risk-medium", risk >= 21 && risk < 80);
-  riskPanel.classList.toggle("risk-high", risk >= 80 && risk < RISK_MAX);
-  riskPanel.classList.toggle("risk-critical", risk >= RISK_MAX);
-  gameScreen.classList.toggle("risk-elevated", risk >= 70 && risk < 90);
-  gameScreen.classList.toggle("risk-critical", risk >= 90);
+  riskPanel.classList.toggle("safety-low", safeScore < 40);
+  riskPanel.classList.toggle("safety-medium", safeScore >= 40 && safeScore < 80);
+  riskPanel.classList.toggle("safety-high", safeScore >= 80 && safeScore < SAFE_MAX);
+  riskPanel.classList.toggle("safety-complete", safeScore >= SAFE_MAX);
+  gameScreen.classList.toggle("safety-near-complete", safeScore >= 80 && safeScore < SAFE_MAX);
 
-  if (risk >= 80 && risk < RISK_MAX) {
-    setRiskMessage("高風險，快接住支持。");
-  } else if (risk >= 21) {
-    setRiskMessage("警戒中，接住支持。");
-  } else if (risk >= 1) {
-    setRiskMessage("安全區，繼續穩住。");
+  if (safeScore >= 80 && safeScore < SAFE_MAX) {
+    setRiskMessage("快滿了，繼續接住支持！");
+  } else if (safeScore >= 40) {
+    setRiskMessage("接住綠色，累積安全。");
   } else {
-    setRiskMessage("安全區達成");
+    setRiskMessage("安全值上升才會靠近通關。");
   }
 }
 
 function resetRoundState() {
-  risk = RISK_START;
-  highestRisk = RISK_START;
+  safeScore = SAFE_START;
+  highestSafeScore = SAFE_START;
   caughtCounts = {
     pressure: 0,
     danger: 0,
@@ -274,11 +309,11 @@ function resetRoundState() {
   bestSupportStreak = 0;
   lateSpeedPromptShown = false;
   finalSpeedPromptShown = false;
-  supportSpawnedInFirstTen = false;
+  supportSpawnedInFirstTen = 0;
   earlyDangerStreak = 0;
   lastSpawnLane = null;
   sameLaneStreak = 0;
-  updateRiskDisplay();
+  updateSafetyDisplay();
 }
 
 function setRiskMessage(message) {
@@ -355,8 +390,6 @@ function moveBasket(lane) {
   }
 
   currentLane = lane;
-  playerBasket.classList.remove(...laneClassNames);
-  playerBasket.classList.add(`lane-${lane}`);
   playerBasket.setAttribute("aria-label", `接物籃目前在${laneNames[lane]}軌`);
 
   laneButtons.forEach((button) => {
@@ -366,10 +399,39 @@ function moveBasket(lane) {
   });
 }
 
-function moveBasketStep(direction) {
-  const currentIndex = lanes.indexOf(currentLane);
-  const nextIndex = Math.min(lanes.length - 1, Math.max(0, currentIndex + direction));
-  moveBasket(lanes[nextIndex]);
+function getBasketWidth() {
+  return window.matchMedia("(max-width: 640px)").matches ? BASKET_WIDTH_MOBILE : BASKET_WIDTH_DESKTOP;
+}
+
+function clampBasketX(value) {
+  const stageWidth = laneArea.clientWidth || 360;
+  return Math.min(stageWidth - getBasketWidth(), Math.max(0, value));
+}
+
+function getLaneFromBasketX() {
+  const stageWidth = laneArea.clientWidth || 360;
+  const basketCenter = basketX + getBasketWidth() / 2;
+  const laneIndex = Math.min(lanes.length - 1, Math.max(0, Math.floor((basketCenter / stageWidth) * lanes.length)));
+  return lanes[laneIndex];
+}
+
+function setBasketX(value) {
+  basketX = clampBasketX(value);
+  playerBasket.style.transform = `translate3d(${basketX}px, 0, 0)`;
+  moveBasket(getLaneFromBasketX());
+}
+
+function centerBasket() {
+  const stageWidth = laneArea.clientWidth || 360;
+  setBasketX((stageWidth - getBasketWidth()) / 2);
+}
+
+function updateBasketPosition(deltaTime) {
+  basketVelocity = basketInputDirection * BASKET_SPEED;
+
+  if (basketVelocity !== 0) {
+    setBasketX(basketX + basketVelocity * deltaTime);
+  }
 }
 
 function getElapsedSeconds() {
@@ -385,37 +447,34 @@ function updateCatchLine() {
   const catcherHeight = getCatcherHeight();
   catchLineY = Math.max(140, stageHeight - CATCHER_BOTTOM_OFFSET - catcherHeight);
   catcherBottomY = Math.min(stageHeight, catchLineY + catcherHeight);
+  basketY = catchLineY;
+  setBasketX(basketX);
 }
 
 function getMaxActiveItems() {
-  return getElapsedSeconds() < FIRST_SUPPORT_DEADLINE ? EARLY_GAME_MAX_ACTIVE_ITEMS : MAX_ACTIVE_ITEMS;
+  return getCurrentDropPhase().maxActive;
+}
+
+function getCurrentDropPhase() {
+  const elapsedSeconds = getElapsedSeconds();
+  let currentPhase = DROP_PHASES[0];
+
+  DROP_PHASES.forEach((phase) => {
+    if (elapsedSeconds >= phase.start) {
+      currentPhase = phase;
+    }
+  });
+
+  return currentPhase;
+}
+
+function getSpawnInterval() {
+  const [minInterval, maxInterval] = getCurrentDropPhase().spawnInterval;
+  return minInterval + Math.random() * (maxInterval - minInterval);
 }
 
 function getDropRatios() {
-  const elapsedSeconds = getElapsedSeconds();
-  const supportBoost = risk >= 80 ? HIGH_RISK_SUPPORT_BOOST : 0;
-
-  if (elapsedSeconds < 20) {
-    return {
-      pressure: 45,
-      danger: Math.max(10, 25 - supportBoost),
-      support: 30 + supportBoost,
-    };
-  }
-
-  if (elapsedSeconds < 40) {
-    return {
-      pressure: 40,
-      danger: Math.max(15, 35 - supportBoost),
-      support: 25 + supportBoost,
-    };
-  }
-
-  return {
-    pressure: 35,
-    danger: Math.max(20, 45 - supportBoost),
-    support: 20 + supportBoost,
-  };
+  return getCurrentDropPhase().ratios;
 }
 
 function pickWeightedType() {
@@ -467,6 +526,44 @@ function getCatcherHeight() {
   return window.matchMedia("(max-width: 640px)").matches ? CATCHER_HEIGHT_MOBILE : CATCHER_HEIGHT_DESKTOP;
 }
 
+function canSpawnAt(lane, y) {
+  return activeItems.every((drop) => {
+    const distance = Math.abs(drop.y - y);
+
+    if (drop.lane === lane) {
+      return distance >= MIN_SAME_LANE_VERTICAL_GAP;
+    }
+
+    return distance >= MIN_GLOBAL_VERTICAL_GAP;
+  });
+}
+
+function pickSpawnLaneWithSpacing() {
+  for (let attempt = 0; attempt < MAX_SPAWN_ATTEMPTS; attempt += 1) {
+    const shuffledLanes = [...lanes].sort(() => Math.random() - 0.5);
+    const lane = shuffledLanes.find((candidateLane) => {
+      if (candidateLane === lastSpawnLane && sameLaneStreak >= MAX_SAME_LANE_STREAK) {
+        return false;
+      }
+
+      return canSpawnAt(candidateLane, -SPAWN_OFFSET);
+    });
+
+    if (lane) {
+      if (lane === lastSpawnLane) {
+        sameLaneStreak += 1;
+      } else {
+        lastSpawnLane = lane;
+        sameLaneStreak = 1;
+      }
+
+      return lane;
+    }
+  }
+
+  return null;
+}
+
 function getLaneX(lane) {
   const laneIndex = lanes.indexOf(lane);
   const stageWidth = laneArea.clientWidth || 360;
@@ -482,7 +579,7 @@ function pickDropItem() {
   if (
     elapsedSeconds >= FIRST_SUPPORT_FORCE_AFTER &&
     elapsedSeconds < FIRST_SUPPORT_DEADLINE &&
-    !supportSpawnedInFirstTen
+    supportSpawnedInFirstTen < 2
   ) {
     type = "support";
   }
@@ -502,7 +599,7 @@ function pickDropItem() {
   }
 
   if (type === "support" && elapsedSeconds < FIRST_SUPPORT_DEADLINE) {
-    supportSpawnedInFirstTen = true;
+    supportSpawnedInFirstTen += 1;
   }
 
   const pool = dropItems.filter((item) => item.type === type);
@@ -515,7 +612,13 @@ function createDrop() {
   }
 
   const item = pickDropItem();
-  const lane = pickSpawnLane();
+  const lane = pickSpawnLaneWithSpacing();
+
+  if (!lane) {
+    nextSpawnAt = performance.now() + SPAWN_RETRY_DELAY;
+    return;
+  }
+
   const x = getLaneX(lane);
   const y = -SPAWN_OFFSET;
   const element = document.createElement("div");
@@ -553,53 +656,35 @@ function maybeCreateDrop(timestamp) {
     createDrop();
   }
 
-  nextSpawnAt = timestamp + SPAWN_INTERVAL;
+  nextSpawnAt = timestamp + getSpawnInterval();
 }
 
 function getCurrentFallSpeed() {
-  const elapsedSeconds = getElapsedSeconds();
-  let timeMultiplier = 1;
-
-  if (elapsedSeconds < NORMAL_SPEED_START) {
-    timeMultiplier = EARLY_GAME_SPEED_MULTIPLIER;
-  } else if (elapsedSeconds < LATE_GAME_SPEED_START) {
-    timeMultiplier = 1;
-  } else if (elapsedSeconds < FINAL_SPEED_START) {
-    timeMultiplier = LATE_GAME_SPEED_MULTIPLIER;
-  } else {
-    timeMultiplier = FINAL_SPEED_MULTIPLIER;
-  }
-
-  let riskMultiplier = 1;
-  if (risk >= 90) {
-    riskMultiplier = CRITICAL_RISK_SPEED_MULTIPLIER;
-  } else if (risk >= 70) {
-    riskMultiplier = HIGH_RISK_SPEED_MULTIPLIER;
-  }
+  const timeMultiplier = getCurrentDropPhase().speedMultiplier;
 
   let supportSlowMultiplier = 1;
   if (supportSlowTimerId !== null) {
     supportSlowMultiplier = SUPPORT_SLOW_MULTIPLIER;
   }
 
-  return BASE_FALL_SPEED * timeMultiplier * riskMultiplier * supportSlowMultiplier;
+  return BASE_FALL_SPEED * timeMultiplier * supportSlowMultiplier;
 }
 
 function avoidDanger() {
   avoidedDangerCount += 1;
-  showItemMessage("避開危險，風險沒升高。");
+  showItemMessage("避開危險，守住安全。");
 }
 
 function applyItemEffect(item) {
-  const riskBeforeCatch = risk;
+  const safeBeforeCatch = safeScore;
   caughtCounts[item.type] += 1;
-  risk = clampRisk(risk + item.riskChange);
+  safeScore = clampSafeScore(safeScore + item.safetyChange);
 
   if (item.type === "support") {
     supportStreak += 1;
 
     if (supportStreak >= 2) {
-      risk = clampRisk(risk + SUPPORT_COMBO_BONUS);
+      safeScore = clampSafeScore(safeScore + SUPPORT_COMBO_BONUS);
     }
 
     bestSupportStreak = Math.max(bestSupportStreak, supportStreak);
@@ -607,38 +692,35 @@ function applyItemEffect(item) {
     supportStreak = 0;
   }
 
-  highestRisk = Math.max(highestRisk, risk);
-  updateRiskDisplay();
+  highestSafeScore = Math.max(highestSafeScore, safeScore);
+  updateSafetyDisplay();
 
   if (item.type === "danger") {
     showTemporaryEffect("danger-flash");
     playSfx("danger");
-    showItemMessage("危險選擇，風險快速上升。");
+    showItemMessage("危險會拉低安全。");
   } else if (item.type === "support") {
     showTemporaryEffect("support-flash");
     startSupportSlowdown();
     playSfx("support");
 
-    if (risk <= 20) {
-      showItemMessage("進入安全區！");
-    } else if (riskBeforeCatch >= 80) {
-      showItemMessage("拉回來了！");
+    if (safeScore >= SAFE_MAX) {
+      showItemMessage("安全成功接住！");
+    } else if (safeScore >= 80 && safeBeforeCatch < 80) {
+      showItemMessage("快滿了，繼續接住支持！");
     } else if (supportStreak >= 2) {
-      showItemMessage("支持連擊，風險再下降。");
+      showItemMessage("連續接住，安全值上升！");
     } else {
-      showItemMessage("支持進場，風險下降。");
+      showItemMessage("安全值上升！");
     }
   } else {
     playSfx("pressure");
-    showItemMessage("壓力累積，風險上升。");
+    showItemMessage("壓力會干擾安全。");
   }
 
-  if (risk >= RISK_MAX) {
-    playSfx("gameover");
-    endGame("crisis");
-  } else if (risk <= RISK_MIN) {
+  if (safeScore >= SAFE_MAX) {
     playSfx("safe");
-    endGame("safe-zone");
+    endGame("complete");
   }
 }
 
@@ -647,10 +729,11 @@ function removeDrop(drop, wasCaught) {
 
   if (wasCaught) {
     drop.element.classList.add("is-caught");
-    const mouthY = Math.min(catchLineY + getCatcherHeight() * 0.28, catcherBottomY - getDropHeight() * 0.42);
+    const mouthX = basketX + getBasketWidth() / 2 - getDropWidth() / 2;
+    const mouthY = Math.min(basketY + getCatcherHeight() * 0.28, catcherBottomY - getDropHeight() * 0.42);
     playerBasket.classList.add("is-catching");
     drop.element.style.transition = "transform 150ms ease-in, opacity 150ms ease-in";
-    drop.element.style.transform = `translate3d(${drop.x}px, ${mouthY}px, 0) scale(0.28)`;
+    drop.element.style.transform = `translate3d(${mouthX}px, ${mouthY}px, 0) scale(0.28)`;
     setTimeout(() => {
       drop.element.remove();
       playerBasket.classList.remove("is-catching");
@@ -676,6 +759,7 @@ function updateDrops(timestamp) {
 
   const secondsPassed = Math.min((timestamp - lastFrameTime) / 1000, MAX_DELTA);
   lastFrameTime = timestamp;
+  updateBasketPosition(secondsPassed);
   const elapsedSeconds = Math.min(GAME_DURATION, (timestamp - gameStartTime) / 1000);
   const nextTimeLeft = Math.max(0, Math.ceil(GAME_DURATION - elapsedSeconds));
 
@@ -690,7 +774,7 @@ function updateDrops(timestamp) {
 
     if (timeLeft <= FINAL_SPEED_TIME && !finalSpeedPromptShown) {
       finalSpeedPromptShown = true;
-      showItemMessage("最後 15 秒，守住風險！");
+      showItemMessage("最後 15 秒，接住安全！");
     }
 
     if (timeLeft <= 0) {
@@ -709,11 +793,19 @@ function updateDrops(timestamp) {
     drop.y += getCurrentFallSpeed() * secondsPassed;
     drop.element.style.transform = `translate3d(${drop.x}px, ${drop.y}px, 0)`;
 
+    const dropLeft = drop.x;
+    const dropRight = drop.x + getDropWidth();
+    const dropTop = drop.y;
     const dropBottom = drop.y + getDropHeight();
-    const overlapsCatcher = dropBottom >= catchLineY && drop.y <= catcherBottomY;
-    const hasPassedCatcher = drop.y > catcherBottomY;
+    const basketLeft = basketX;
+    const basketRight = basketX + getBasketWidth();
+    const basketTop = basketY;
+    const basketBottom = catcherBottomY;
+    const horizontalOverlap = dropRight >= basketLeft && dropLeft <= basketRight;
+    const verticalOverlap = dropBottom >= basketTop && dropTop <= basketBottom;
+    const hasPassedCatcher = dropTop > basketBottom;
 
-    if (drop.lane === currentLane && overlapsCatcher) {
+    if (horizontalOverlap && verticalOverlap) {
       applyItemEffect(drop.item);
       removeDrop(drop, true);
     } else if (hasPassedCatcher) {
@@ -802,6 +894,12 @@ function clearDrops() {
     element.remove();
   });
   activeItems = [];
+}
+
+function stopBasketInput() {
+  basketInputDirection = 0;
+  basketVelocity = 0;
+  basketPointerId = null;
 }
 
 function clearSupportSlowdown() {
@@ -943,30 +1041,36 @@ function playSfx(type) {
 }
 
 function getRoundSummaryText() {
+  const distanceToGoal = Math.max(0, SAFE_MAX - safeScore);
+
   return [
-    { icon: "🟠", label: "壓力", value: `${caughtCounts.pressure} 次` },
-    { icon: "🔴", label: "危險", value: `${caughtCounts.danger} 次` },
-    { icon: "🟢", label: "支持", value: `${caughtCounts.support} 次` },
-    { icon: "🛡️", label: "避開危險", value: `${avoidedDangerCount} 次` },
-    { icon: "📈", label: "最高風險", value: highestRisk },
-    { icon: "✨", label: "支持連擊", value: `${bestSupportStreak} 次` },
+    { icon: "🟢", label: "綠色支持", value: `${caughtCounts.support} 次` },
+    { icon: "🟠", label: "橘色壓力", value: `${caughtCounts.pressure} 次` },
+    { icon: "🔴", label: "紅色危險", value: `${caughtCounts.danger} 次` },
+    { icon: "📈", label: "最高安全值", value: highestSafeScore },
+    { icon: "✨", label: "連續支持", value: `${bestSupportStreak} 次` },
+    { icon: "🎯", label: "距離通關", value: `${distanceToGoal} 分` },
   ];
 }
 
 function getTimedResultType() {
-  if (risk <= 20) {
-    return "success";
+  if (safeScore >= 80) {
+    return "near";
   }
 
-  if (risk <= 79) {
-    return "steady";
+  if (safeScore >= 40) {
+    return "more-support";
   }
 
-  return "high-risk";
+  return "low-safety";
 }
 
 function renderResult(resultType) {
   resultScreen.classList.remove(
+    "result-complete",
+    "result-near",
+    "result-more-support",
+    "result-low-safety",
     "result-safe-zone",
     "result-success",
     "result-steady",
@@ -976,39 +1080,32 @@ function renderResult(resultType) {
   resultScreen.classList.add(`result-${resultType}`);
 
   const resultContent = {
-    "safe-zone": {
-      badge: "任務完成",
-      title: "風險降到安全區",
-      description: "你接住了足夠的支持，讓風險降回安全區。",
-      tip: "下一次挑戰更快降到 0。",
+    complete: {
+      badge: "通關成功",
+      title: "安全成功接住",
+      description: "你接住足夠支持，把安全值累積到 100。",
+      tip: "下一次挑戰更快累積到 100。",
       button: "再挑戰一次",
     },
-    crisis: {
-      badge: "安全警示",
-      title: "安全危機發生",
-      description: "風險超過 100。危險選擇讓危機快速升高，需要更早被停下來。",
+    near: {
+      badge: "接近通關",
+      title: "差一點就接住安全",
+      description: "你已經累積不少支持，再多一點就能達成安全。",
+      tip: "下一次多接幾張綠色支持。",
+      button: "再挑戰一次",
+    },
+    "more-support": {
+      badge: "繼續累積",
+      title: "還需要更多支持",
+      description: "壓力與危險仍會干擾安全，需要持續接住支持。",
       tip: "下一次先避開紅色危險。",
       button: "再挑戰一次",
     },
-    success: {
-      badge: "任務達成",
-      title: "成功守住",
-      description: "你把風險維持在安全線附近，讓危機沒有擴大。",
-      tip: "下一次試著讓風險歸零。",
-      button: "再挑戰一次",
-    },
-    steady: {
-      badge: "任務回顧",
-      title: "再接再厲",
-      description: "你撐過了 60 秒，但風險還能再往安全區推進。",
-      tip: "下一次把風險降到 20 以下。",
-      button: "再挑戰一次",
-    },
-    "high-risk": {
-      badge: "高風險",
-      title: "高風險未解除",
-      description: "你撐到最後，但風險仍然偏高。越接近危機，越需要避開危險、接住支持。",
-      tip: "下一次多接綠色、少碰紅色。",
+    "low-safety": {
+      badge: "需要支持",
+      title: "安全還沒接住",
+      description: "支持不足時，危險更容易靠近，需要更早求助與介入。",
+      tip: "下一次先鎖定綠色支持。",
       button: "再挑戰一次",
     },
   };
@@ -1020,7 +1117,7 @@ function renderResult(resultType) {
   resultDescription.hidden = false;
   lessonList.hidden = false;
   restartButton.textContent = content.button;
-  finalRisk.textContent = `最後風險：${risk} / ${RISK_MAX}`;
+  finalRisk.textContent = `最後安全值：${safeScore} / ${SAFE_MAX}`;
   roundSummary.innerHTML = getRoundSummaryText()
     .map((item) => `
       <span class="stat-card">
@@ -1032,7 +1129,6 @@ function renderResult(resultType) {
     .join("");
   challengeTip.textContent = content.tip;
 }
-
 function endGame(resultType) {
   isPlaying = false;
   stopTimer();
@@ -1047,8 +1143,17 @@ function endGame(resultType) {
 }
 
 function resetGameVisuals() {
-  gameScreen.classList.remove("risk-elevated", "risk-critical", "danger-flash", "support-flash");
-  riskPanel.classList.remove("risk-safe", "risk-medium", "risk-high", "risk-critical");
+  gameScreen.classList.remove("risk-elevated", "risk-critical", "safety-near-complete", "danger-flash", "support-flash");
+  riskPanel.classList.remove(
+    "risk-safe",
+    "risk-medium",
+    "risk-high",
+    "risk-critical",
+    "safety-low",
+    "safety-medium",
+    "safety-high",
+    "safety-complete"
+  );
   setRiskMessage("");
   clearItemMessage();
   clearEffectClasses();
@@ -1057,6 +1162,7 @@ function resetGameVisuals() {
 function startGame() {
   unlockMusicByUserGesture();
   isPlaying = false;
+  stopBasketInput();
   stopTimer();
   stopDropping();
   clearDrops();
@@ -1066,13 +1172,15 @@ function startGame() {
   resetRoundState();
   timeLeft = GAME_DURATION;
   updateTimerDisplay();
-  moveBasket("middle");
   showScreen(gameScreen);
+  updateCatchLine();
+  centerBasket();
   startCountdown();
 }
 
 function returnHome() {
   isPlaying = false;
+  stopBasketInput();
   stopTimer();
   stopDropping();
   clearDrops();
@@ -1082,34 +1190,65 @@ function returnHome() {
   resetRoundState();
   timeLeft = GAME_DURATION;
   updateTimerDisplay();
-  moveBasket("middle");
+  centerBasket();
   showScreen(homeScreen);
 }
 
 startButton.addEventListener("click", startGame);
 restartButton.addEventListener("click", startGame);
 homeButton.addEventListener("click", returnHome);
-musicToggle.addEventListener("click", toggleMusic);
-soundToggle.addEventListener("click", toggleSound);
 
 laneButtons.forEach((button) => {
-  button.addEventListener("click", () => {
+  const directionByLane = {
+    left: -1,
+    middle: 0,
+    right: 1,
+  };
+
+  button.addEventListener("pointerdown", (event) => {
     if (!isPlaying) {
       return;
     }
 
-    moveBasket(button.dataset.lane);
+    event.preventDefault();
+    basketInputDirection = directionByLane[button.dataset.lane] || 0;
   });
 });
 
-laneElements.forEach((laneElement, index) => {
-  laneElement.addEventListener("click", () => {
-    if (!isPlaying) {
-      return;
-    }
+document.addEventListener("pointerup", stopBasketInput);
+document.addEventListener("pointercancel", stopBasketInput);
 
-    moveBasket(lanes[index]);
-  });
+playerBasket.addEventListener("pointerdown", (event) => {
+  if (!isPlaying) {
+    return;
+  }
+
+  event.preventDefault();
+  basketPointerId = event.pointerId;
+  basketDragOffsetX = event.clientX - playerBasket.getBoundingClientRect().left;
+  playerBasket.setPointerCapture(event.pointerId);
+});
+
+playerBasket.addEventListener("pointermove", (event) => {
+  if (!isPlaying || basketPointerId !== event.pointerId) {
+    return;
+  }
+
+  event.preventDefault();
+  const stageLeft = laneArea.getBoundingClientRect().left;
+  setBasketX(event.clientX - stageLeft - basketDragOffsetX);
+});
+
+playerBasket.addEventListener("pointerup", (event) => {
+  if (basketPointerId === event.pointerId) {
+    basketPointerId = null;
+  }
+});
+
+playerBasket.addEventListener("pointercancel", (event) => {
+  if (basketPointerId === event.pointerId) {
+    basketPointerId = null;
+  }
 });
 
 document.addEventListener("keydown", (event) => {
@@ -1127,15 +1266,27 @@ document.addEventListener("keydown", (event) => {
 
   if (directionByKey[key]) {
     event.preventDefault();
-    moveBasketStep(directionByKey[key]);
+    basketInputDirection = directionByKey[key];
   }
 });
 
-window.addEventListener("resize", updateCatchLine);
+document.addEventListener("keyup", (event) => {
+  const key = event.key.toLowerCase();
+
+  if (["arrowleft", "a", "arrowright", "d"].includes(key)) {
+    basketInputDirection = 0;
+  }
+});
+
+window.addEventListener("resize", () => {
+  updateCatchLine();
+  setBasketX(basketX);
+});
 
 updateTimerDisplay();
 resetRoundState();
-moveBasket(currentLane);
+centerBasket();
 updateSoundButtons();
 registerMusicUnlockGestures();
 tryPlayMusic();
+

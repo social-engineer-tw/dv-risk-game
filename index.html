@@ -3,39 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>好險有你</title>
+  <title>接住安全</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="sound-controls" aria-label="聲音設定">
-    <button id="music-toggle" class="sound-button" type="button" aria-pressed="false">音樂：關</button>
-    <button id="sound-toggle" class="sound-button" type="button" aria-pressed="true">音效：開</button>
-  </div>
-
   <main class="app-shell">
     <section id="home-screen" class="screen screen-active mission-screen" aria-labelledby="home-title">
       <div class="mission-panel home-layout">
         <div class="mission-copy">
           <p class="eyebrow">家暴防治宣導小遊戲</p>
-          <h1 id="home-title">好險有你</h1>
-          <p class="subtitle">60 秒挑戰：把家暴風險降到 20 以下，別讓它超過 100。</p>
-          <p class="action-note">準備好了嗎？接住綠色支持、閃避橘色壓力和紅色危險，把風險拉回安全區。</p>
+          <h1 id="home-title">接住安全</h1>
+          <p class="subtitle">60 秒挑戰：接住綠色支持，把安全值累積到 100。</p>
+          <p class="action-note">準備好了嗎？接住綠色支持，避開橘色壓力與紅色危險，讓安全一點一點累積起來。</p>
 
           <div class="tool-card-row" aria-label="任務道具">
             <article class="tool-card tool-support">
               <span class="tool-icon" aria-hidden="true">🟢</span>
               <strong>綠色支持</strong>
-              <p>少量降低風險</p>
+              <p>增加安全值</p>
             </article>
             <article class="tool-card tool-pressure">
               <span class="tool-icon" aria-hidden="true">🟠</span>
               <strong>橘色壓力</strong>
-              <p>少量增加風險</p>
+              <p>減少安全值</p>
             </article>
             <article class="tool-card tool-danger">
               <span class="tool-icon" aria-hidden="true">🔴</span>
               <strong>紅色危險</strong>
-              <p>大量增加風險</p>
+              <p>大幅減少安全值</p>
             </article>
           </div>
 
@@ -56,25 +51,25 @@
             <p class="hud-subtitle">60 秒挑戰</p>
           </div>
 
-          <div class="risk-panel hud-risk" aria-label="目前風險值">
+          <div class="risk-panel hud-risk" aria-label="目前安全值">
             <div class="risk-topline">
-              <span>風險值</span>
-              <strong id="risk-value">50 / 100</strong>
+              <span>安全值</span>
+              <strong id="risk-value">0 / 100</strong>
             </div>
             <div class="risk-meter" aria-hidden="true">
               <div id="risk-bar" class="risk-bar"></div>
             </div>
             <div class="risk-thresholds" aria-hidden="true">
-              <span>20 安全線</span>
-              <span>80 高風險</span>
-              <span>100 危機</span>
+              <span>50 累積中</span>
+              <span>80 接近通關</span>
+              <span>100 通關</span>
             </div>
             <div class="legend-row" aria-label="掉落物圖例">
               <span>🟢 接住支持</span>
               <span>🟠 閃避壓力</span>
               <span>🔴 避開危險</span>
             </div>
-            <p id="risk-message" class="risk-message">警戒中，接住支持。</p>
+            <p id="risk-message" class="risk-message">接住綠色，累積安全。</p>
           </div>
 
           <div class="timer-box mission-timer" aria-live="polite">
@@ -114,34 +109,34 @@
           <p id="result-description" class="result-description"></p>
         </div>
 
-        <p id="final-risk" class="final-risk">最後風險：50 / 100</p>
+        <p id="final-risk" class="final-risk">最後安全值：0 / 100</p>
 
         <section class="summary-card" aria-labelledby="summary-title">
           <h3 id="summary-title">本局回顧</h3>
           <div id="round-summary" class="summary-grid">
-            <span>壓力 0 次</span>
-            <span>危險 0 次</span>
-            <span>支持 0 次</span>
-            <span>避開危險 0 次</span>
-            <span>最高風險 50</span>
-            <span>最高支持連擊 0</span>
+            <span>綠色支持 0 次</span>
+            <span>橘色壓力 0 次</span>
+            <span>紅色危險 0 次</span>
+            <span>最高安全值 0</span>
+            <span>最高連續支持 0</span>
+            <span>距離通關 100 分</span>
           </div>
         </section>
 
-        <p id="challenge-tip" class="challenge-tip">下一次把風險降到 20 以下。</p>
+        <p id="challenge-tip" class="challenge-tip">下一次把安全值累積到 100。</p>
 
         <div id="lesson-list" class="lesson-list">
           <article class="lesson-card">
             <span class="lesson-number">1</span>
-            <p>壓力會累積</p>
+            <p>支持累積安全</p>
           </article>
           <article class="lesson-card">
             <span class="lesson-number">2</span>
-            <p>危險選擇會傷人</p>
+            <p>壓力會干擾安全</p>
           </article>
           <article class="lesson-card">
             <span class="lesson-number">3</span>
-            <p>支持可以降風險</p>
+            <p>危險會拉低安全</p>
           </article>
         </div>
 
