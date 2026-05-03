@@ -443,6 +443,7 @@ h2 {
   box-shadow: var(--shadow);
   overflow: hidden;
   touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .lane {
@@ -484,6 +485,7 @@ h2 {
   transition: box-shadow 140ms ease;
   z-index: 2;
   touch-action: none;
+  pointer-events: auto;
   user-select: none;
 }
 
@@ -1562,6 +1564,8 @@ body {
   display: grid;
   gap: clamp(16px, 2.4vw, 24px);
   align-content: center;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .eyebrow {
@@ -1674,6 +1678,10 @@ h1 {
 .mission-start {
   width: min(100%, 320px);
   margin-top: 4px;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  justify-self: start;
 }
 
 .primary-button,
@@ -1699,6 +1707,8 @@ h1 {
 .mission-visual {
   position: relative;
   display: grid;
+  grid-column: 2;
+  grid-row: 1 / span 2;
   min-height: clamp(430px, 54vw, 680px);
   padding: clamp(8px, 1.4vw, 14px);
   place-items: center;
@@ -2098,6 +2108,17 @@ h1 {
     gap: 18px;
   }
 
+  .mission-copy,
+  .mission-visual,
+  .mission-start {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .mission-start {
+    justify-self: stretch;
+  }
+
   .mission-visual {
     min-height: clamp(300px, 58vw, 460px);
   }
@@ -2362,6 +2383,8 @@ h1 {
 .lane-area.mission-stage {
   display: block;
   grid-template-columns: none;
+  touch-action: none;
+  overscroll-behavior: contain;
   background:
     radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.72), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(220, 240, 232, 0.9)),

@@ -244,7 +244,7 @@ let basketX = 0;
 let basketVelocity = 0;
 let basketInputDirection = 0;
 let basketPointerId = null;
-let basketDragOffsetX = 0;
+let stageRect = null;
 let basketY = 0;
 let safeScore = SAFE_START;
 let highestSafeScore = SAFE_START;
@@ -417,6 +417,18 @@ function getBasketWidth() {
   return window.matchMedia("(max-width: 640px)").matches ? BASKET_WIDTH_MOBILE : BASKET_WIDTH_DESKTOP;
 }
 
+function refreshStageMetrics() {
+  stageRect = laneArea.getBoundingClientRect();
+}
+
+function getStageRect() {
+  if (!stageRect) {
+    refreshStageMetrics();
+  }
+
+  return stageRect;
+}
+
 function clampBasketX(value) {
   const stageWidth = laneArea.clientWidth || 360;
   return Math.min(stageWidth - getBasketWidth(), Math.max(0, value));
@@ -440,6 +452,11 @@ function centerBasket() {
   setBasketX((stageWidth - getBasketWidth()) / 2);
 }
 
+function setBasketCenterFromClientX(clientX) {
+  const rect = getStageRect();
+  setBasketX(clientX - rect.left - getBasketWidth() / 2);
+}
+
 function updateBasketPosition(deltaTime) {
   const dangerSlowMultiplier = dangerBasketSlowTimerId !== null ? DANGER_BASKET_SLOW_MULTIPLIER : 1;
   basketVelocity = basketInputDirection * BASKET_SPEED * dangerSlowMultiplier;
@@ -458,6 +475,7 @@ function getElapsedSeconds() {
 }
 
 function updateCatchLine() {
+  refreshStageMetrics();
   const stageHeight = laneArea.clientHeight || laneArea.offsetHeight || 360;
   const catcherHeight = getCatcherHeight();
   catchLineY = Math.max(140, stageHeight - CATCHER_BOTTOM_OFFSET - catcherHeight);
@@ -1254,38 +1272,45 @@ laneButtons.forEach((button) => {
 document.addEventListener("pointerup", stopBasketInput);
 document.addEventListener("pointercancel", stopBasketInput);
 
-playerBasket.addEventListener("pointerdown", (event) => {
+function startBasketPointerDrag(event) {
   if (!isPlaying) {
     return;
   }
 
   event.preventDefault();
+  basketInputDirection = 0;
   basketPointerId = event.pointerId;
-  basketDragOffsetX = event.clientX - playerBasket.getBoundingClientRect().left;
-  playerBasket.setPointerCapture(event.pointerId);
-});
+  refreshStageMetrics();
+  setBasketCenterFromClientX(event.clientX);
 
-playerBasket.addEventListener("pointermove", (event) => {
+  if (laneArea.setPointerCapture) {
+    laneArea.setPointerCapture(event.pointerId);
+  }
+}
+
+function moveBasketPointerDrag(event) {
   if (!isPlaying || basketPointerId !== event.pointerId) {
     return;
   }
 
   event.preventDefault();
-  const stageLeft = laneArea.getBoundingClientRect().left;
-  setBasketX(event.clientX - stageLeft - basketDragOffsetX);
-});
+  setBasketCenterFromClientX(event.clientX);
+}
 
-playerBasket.addEventListener("pointerup", (event) => {
+function endBasketPointerDrag(event) {
   if (basketPointerId === event.pointerId) {
+    if (laneArea.releasePointerCapture && laneArea.hasPointerCapture && laneArea.hasPointerCapture(event.pointerId)) {
+      laneArea.releasePointerCapture(event.pointerId);
+    }
+
     basketPointerId = null;
   }
-});
+}
 
-playerBasket.addEventListener("pointercancel", (event) => {
-  if (basketPointerId === event.pointerId) {
-    basketPointerId = null;
-  }
-});
+laneArea.addEventListener("pointerdown", startBasketPointerDrag);
+laneArea.addEventListener("pointermove", moveBasketPointerDrag);
+laneArea.addEventListener("pointerup", endBasketPointerDrag);
+laneArea.addEventListener("pointercancel", endBasketPointerDrag);
 
 document.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
@@ -1317,6 +1342,13 @@ document.addEventListener("keyup", (event) => {
 window.addEventListener("resize", () => {
   updateCatchLine();
   setBasketX(basketX);
+});
+
+window.addEventListener("orientationchange", () => {
+  window.setTimeout(() => {
+    updateCatchLine();
+    setBasketX(basketX);
+  }, 120);
 });
 
 updateTimerDisplay();
