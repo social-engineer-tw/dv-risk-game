@@ -14,25 +14,6 @@
           <p class="eyebrow">家暴防治宣導小遊戲</p>
           <h1 id="home-title">接住安全</h1>
           <p class="subtitle">60 秒挑戰：接住綠色支持，把安全值累積到 100。</p>
-          <p class="action-note">準備好了嗎？接住綠色支持，避開橘色壓力與紅色危險，讓安全一點一點累積起來。</p>
-
-          <div class="tool-card-row" aria-label="任務道具">
-            <article class="tool-card tool-support">
-              <span class="tool-icon" aria-hidden="true">🟢</span>
-              <strong>綠色支持</strong>
-              <p>增加安全值</p>
-            </article>
-            <article class="tool-card tool-pressure">
-              <span class="tool-icon" aria-hidden="true">🟠</span>
-              <strong>橘色壓力</strong>
-              <p>減少安全值</p>
-            </article>
-            <article class="tool-card tool-danger">
-              <span class="tool-icon" aria-hidden="true">🔴</span>
-              <strong>紅色危險</strong>
-              <p>大幅減少安全值</p>
-            </article>
-          </div>
 
           <button id="start-button" class="primary-button mission-start" type="button">開始挑戰</button>
         </div>
@@ -40,6 +21,24 @@
         <aside class="mission-visual" aria-hidden="true">
           <img src="assets/images/hero-illustration.png" alt="" onerror="this.hidden=true">
         </aside>
+      </div>
+    </section>
+
+    <section id="instructions-screen" class="screen instructions-screen" aria-label="玩法說明" aria-hidden="true">
+      <div class="mission-panel instructions-layout">
+        <figure class="instructions-card">
+          <img
+            src="assets/images/game-instructions-visual.png"
+            alt="接住安全遊戲說明圖"
+            onerror="this.hidden=true; this.nextElementSibling.hidden=false;"
+          >
+          <figcaption class="instructions-placeholder" hidden>遊戲說明圖片載入中</figcaption>
+        </figure>
+
+        <div class="instructions-actions">
+          <button id="play-button" class="primary-button" type="button">開始遊戲</button>
+          <button id="instructions-home-button" class="secondary-button" type="button">返回首頁</button>
+        </div>
       </div>
     </section>
 

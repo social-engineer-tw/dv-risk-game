@@ -82,9 +82,12 @@ const SFX_PATHS = {
 };
 
 const homeScreen = document.querySelector("#home-screen");
+const instructionsScreen = document.querySelector("#instructions-screen");
 const gameScreen = document.querySelector("#game-screen");
 const resultScreen = document.querySelector("#result-screen");
 const startButton = document.querySelector("#start-button");
+const playButton = document.querySelector("#play-button");
+const instructionsHomeButton = document.querySelector("#instructions-home-button");
 const restartButton = document.querySelector("#restart-button");
 const homeButton = document.querySelector("#home-button");
 const musicToggle = document.querySelector("#music-toggle");
@@ -121,35 +124,35 @@ const dropItems = [
     icon: "💸",
     text: "錢不夠",
     type: "pressure",
-    safetyChange: -5,
+    safetyChange: -10,
     message: "壓力正在累積。",
   },
   {
     icon: "💼",
     text: "工作煩",
     type: "pressure",
-    safetyChange: -5,
+    safetyChange: -10,
     message: "工作壓力讓人更緊繃。",
   },
   {
     icon: "🌙",
     text: "睡不好",
     type: "pressure",
-    safetyChange: -5,
+    safetyChange: -10,
     message: "睡不好，判斷更容易變差。",
   },
   {
     icon: "😣",
     text: "被罵了",
     type: "pressure",
-    safetyChange: -5,
+    safetyChange: -10,
     message: "挫折感會干擾安全。",
   },
   {
     icon: "👶",
     text: "孩子哭",
     type: "pressure",
-    safetyChange: -5,
+    safetyChange: -10,
     message: "親職壓力正在增加。",
   },
   {
@@ -265,7 +268,7 @@ let caughtCounts = {
 };
 
 function showScreen(screen) {
-  [homeScreen, gameScreen, resultScreen].forEach((currentScreen) => {
+  [homeScreen, instructionsScreen, gameScreen, resultScreen].forEach((currentScreen) => {
     const isActive = currentScreen === screen;
     currentScreen.classList.toggle("screen-active", isActive);
     currentScreen.setAttribute("aria-hidden", String(!isActive));
@@ -1192,6 +1195,22 @@ function startGame() {
   startCountdown();
 }
 
+function showInstructions() {
+  unlockMusicByUserGesture();
+  isPlaying = false;
+  stopBasketInput();
+  stopTimer();
+  stopDropping();
+  clearDrops();
+  clearCountdown();
+  clearSupportSlowdown();
+  clearDangerBasketSlowdown();
+  resetGameVisuals();
+  timeLeft = GAME_DURATION;
+  updateTimerDisplay();
+  showScreen(instructionsScreen);
+}
+
 function returnHome() {
   isPlaying = false;
   stopBasketInput();
@@ -1209,7 +1228,9 @@ function returnHome() {
   showScreen(homeScreen);
 }
 
-startButton.addEventListener("click", startGame);
+startButton.addEventListener("click", showInstructions);
+playButton.addEventListener("click", startGame);
+instructionsHomeButton.addEventListener("click", returnHome);
 restartButton.addEventListener("click", startGame);
 homeButton.addEventListener("click", returnHome);
 
