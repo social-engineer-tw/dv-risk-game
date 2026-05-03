@@ -1,5 +1,5 @@
 ﻿const GAME_DURATION = 60;
-const SAFE_START = 0;
+const SAFE_START = 20;
 const SAFE_MIN = 0;
 const SAFE_MAX = 100;
 const BASE_FALL_SPEED = 96;
@@ -33,7 +33,6 @@ const MID_GAME_SPEED_MULTIPLIER = 1.25;
 const FINAL_SPEED_MULTIPLIER = 1.8;
 const SUPPORT_SLOW_MULTIPLIER = 0.78;
 const SUPPORT_SLOW_DURATION = 2000;
-const SUPPORT_COMBO_BONUS = 2;
 const DANGER_BASKET_SLOW_MULTIPLIER = 0.72;
 const DANGER_BASKET_SLOW_DURATION = 1400;
 const EFFECT_FLASH_DURATION = 700;
@@ -159,35 +158,35 @@ const dropItems = [
     icon: "🗯️",
     text: "罵回去",
     type: "danger",
-    safetyChange: -15,
+    safetyChange: -25,
     message: "言語暴力會拉低安全。",
   },
   {
     icon: "📱",
     text: "查手機",
     type: "danger",
-    safetyChange: -15,
+    safetyChange: -25,
     message: "控制不是關心，安全下降。",
   },
   {
     icon: "💥",
     text: "砸東西",
     type: "danger",
-    safetyChange: -15,
+    safetyChange: -25,
     message: "砸東西會讓家人害怕。",
   },
   {
     icon: "⚠️",
     text: "威脅人",
     type: "danger",
-    safetyChange: -15,
+    safetyChange: -25,
     message: "威脅會讓安全快速下降。",
   },
   {
     icon: "⛔",
     text: "拿刀械",
     type: "danger",
-    safetyChange: -15,
+    safetyChange: -25,
     message: "武器會讓危險急速升高。",
   },
   {
@@ -706,11 +705,6 @@ function applyItemEffect(item) {
 
   if (item.type === "support") {
     supportStreak += 1;
-
-    if (supportStreak >= 2) {
-      safeScore = clampSafeScore(safeScore + SUPPORT_COMBO_BONUS);
-    }
-
     bestSupportStreak = Math.max(bestSupportStreak, supportStreak);
   } else {
     supportStreak = 0;
@@ -733,8 +727,6 @@ function applyItemEffect(item) {
       showItemMessage("安全成功接住！");
     } else if (safeScore >= 80 && safeBeforeCatch < 80) {
       showItemMessage("快滿了，繼續接住支持！");
-    } else if (supportStreak >= 2) {
-      showItemMessage("連續接住，安全值上升！");
     } else {
       showItemMessage("安全值上升！");
     }
@@ -746,6 +738,12 @@ function applyItemEffect(item) {
   if (safeScore >= SAFE_MAX) {
     playSfx("safe");
     endGame("complete");
+    return;
+  }
+
+  if (safeScore <= SAFE_MIN) {
+    playSfx("gameover");
+    endGame("zero-safety");
   }
 }
 
@@ -1104,6 +1102,7 @@ function renderResult(resultType) {
     "result-near",
     "result-more-support",
     "result-low-safety",
+    "result-zero-safety",
     "result-safe-zone",
     "result-success",
     "result-steady",
@@ -1139,6 +1138,13 @@ function renderResult(resultType) {
       title: "安全還沒接住",
       description: "支持不足時，危險更容易靠近，需要更早求助與介入。",
       tip: "下一次先鎖定綠色支持。",
+      button: "再挑戰一次",
+    },
+    "zero-safety": {
+      badge: "安全歸零",
+      title: "安全值歸零",
+      description: "安全值降到 0，代表危險已經超過可承受範圍，需要更早接住支持。",
+      tip: "下一次先避開紅色危險，接住綠色支持。",
       button: "再挑戰一次",
     },
   };

@@ -2008,7 +2008,8 @@ h1 {
 
 #result-screen.result-crisis .result-badge,
 #result-screen.result-high-risk .result-badge,
-#result-screen.result-low-safety .result-badge {
+#result-screen.result-low-safety .result-badge,
+#result-screen.result-zero-safety .result-badge {
   background: var(--mission-red);
 }
 
@@ -2095,7 +2096,8 @@ h1 {
 
 #result-screen.result-high-risk .mission-panel,
 #result-screen.result-crisis .mission-panel,
-#result-screen.result-low-safety .mission-panel {
+#result-screen.result-low-safety .mission-panel,
+#result-screen.result-zero-safety .mission-panel {
   border-top: 8px solid var(--mission-red);
 }
 
