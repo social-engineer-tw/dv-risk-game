@@ -1549,6 +1549,7 @@ body {
 .home-layout {
   display: grid;
   grid-template-columns: minmax(260px, 0.78fr) minmax(360px, 1.22fr);
+  grid-template-rows: auto auto;
   gap: clamp(24px, 4.2vw, 58px);
   align-items: center;
 }
@@ -1677,10 +1678,10 @@ h1 {
 
 .mission-start {
   width: min(100%, 320px);
-  margin-top: 4px;
+  margin-top: clamp(4px, 1vw, 10px);
   grid-column: 1;
-  grid-row: 1;
-  align-self: end;
+  grid-row: 2;
+  align-self: start;
   justify-self: start;
 }
 
